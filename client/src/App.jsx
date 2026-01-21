@@ -1,10 +1,9 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Navbar from './components/Navbar';
 import Markets from './pages/Markets';
 import Login from './pages/Login';
-// Define these as placeholders or implement them next
 import Signup from './pages/Signup';
 import Portfolio from './pages/Portfolio';
 import Profile from './pages/Profile';
@@ -18,9 +17,36 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
+// Component to handle dynamic page titles
+const PageTitleUpdater = () => {
+  const location = useLocation();
+
+  useEffect(() => {
+    const path = location.pathname;
+    let title = 'ChainXchange - Crypto Trading Platform';
+
+    if (path === '/') title = 'Markets | ChainXchange';
+    else if (path === '/login') title = 'Login | ChainXchange';
+    else if (path === '/signup') title = 'Register | ChainXchange';
+    else if (path === '/portfolio') title = 'Portfolio | ChainXchange';
+    else if (path === '/profile') title = 'Profile | ChainXchange';
+    else if (path === '/wallet') title = 'Wallet | ChainXchange';
+    else if (path.startsWith('/crypto/')) {
+      // We set a generic title here, letting the page component set a specific one
+      // or we can try to leave it if we want the component to take over completely.
+      title = 'Crypto Detail | ChainXchange';
+    }
+
+    document.title = title;
+  }, [location]);
+
+  return null;
+};
+
 const AppContent = () => {
   return (
     <Router>
+      <PageTitleUpdater />
       <Navbar />
       <main className="container">
         <Routes>

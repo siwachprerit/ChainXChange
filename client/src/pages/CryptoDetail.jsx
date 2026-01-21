@@ -56,6 +56,13 @@ const CryptoDetail = () => {
         fetchData();
     }, [coinId]);
 
+    // Update document title when coin data is loaded
+    useEffect(() => {
+        if (coin) {
+            document.title = `${coin.name} (${coin.symbol.toUpperCase()}) | ChainXchange`;
+        }
+    }, [coin]);
+
     // Handle Chart Timeframe Change
     const fetchChartData = async (tf) => {
         setTimeframe(tf);
