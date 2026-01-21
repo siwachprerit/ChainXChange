@@ -33,7 +33,7 @@ function getBasePriceForCoin(coinId) {
         'algorand': 0.2,
         'cosmos': 8
     };
-    
+
     return basePrices[coinId] || 100; // Default to $100 if coin not found
 }
 
@@ -44,7 +44,7 @@ function generateMockChartData(basePrice, days) {
     const dayCount = parseInt(days);
     let dataPoints = 24; // Default hourly for 1 day
     let interval = 60 * 60 * 1000; // 1 hour
-    
+
     if (dayCount <= 1) {
         dataPoints = 24; // Hourly
         interval = 60 * 60 * 1000;
@@ -58,24 +58,24 @@ function generateMockChartData(basePrice, days) {
         dataPoints = Math.min(dayCount, 365); // Daily up to a year
         interval = 24 * 60 * 60 * 1000;
     }
-    
+
     const prices = [];
     const now = Date.now();
     let currentPrice = basePrice;
-    
+
     for (let i = 0; i < dataPoints; i++) {
         const timestamp = now - (dataPoints - 1 - i) * interval;
-        
+
         // Add some realistic price movement (±5% maximum change per interval)
         const changePercent = (Math.random() - 0.5) * 0.1; // ±5%
         currentPrice *= (1 + changePercent);
-        
+
         // Ensure price doesn't go below 10% of base price
         currentPrice = Math.max(currentPrice, basePrice * 0.1);
-        
+
         prices.push([timestamp, parseFloat(currentPrice.toFixed(8))]);
     }
-    
+
     return { prices };
 }
 
@@ -97,7 +97,7 @@ class CryptoController {
                     'crypto-markets',
                     5 * 60 * 1000
                 ),
-                new Promise((_, reject) => 
+                new Promise((_, reject) =>
                     setTimeout(() => reject(new Error('Request timeout')), 30000)
                 )
             ]);
@@ -107,55 +107,30 @@ class CryptoController {
                 console.error('No coins received from CoinGecko, using fallback data');
                 // Fallback data for testing
                 const fallbackCoins = [
-                    {
-                        id: "bitcoin",
-                        symbol: "btc",
-                        name: "Bitcoin",
-                        current_price: 45000,
-                    },
-                    {
-                        id: "ethereum",
-                        symbol: "eth",
-                        name: "Ethereum",
-                        current_price: 3000,
-                    }
+                    { id: "bitcoin", symbol: "btc", name: "Bitcoin", current_price: 45000 },
+                    { id: "ethereum", symbol: "eth", name: "Ethereum", current_price: 3000 }
                 ];
-                
-                return res.render('crypto', {
-                    title: 'Cryptocurrency Markets',
+
+                return res.json({
+                    success: true,
                     coins: fallbackCoins,
-                    user: res.locals.user
+                    message: 'Using fallback data'
                 });
             }
 
-            res.render('crypto', {
-                title: 'Cryptocurrency Markets',
-                coins,
-                user: res.locals.user
-            });
+            res.json({ success: true, coins });
         } catch (error) {
             console.error('Markets error:', error);
-            // Render with fallback data instead of error page
             const fallbackCoins = [
-                {
-                    id: "bitcoin",
-                    symbol: "btc",
-                    name: "Bitcoin",
-                    current_price: 45000,
-                },
-                {
-                    id: "ethereum",
-                    symbol: "eth",
-                    name: "Ethereum",
-                    current_price: 3000,
-                }
+                { id: "bitcoin", symbol: "btc", name: "Bitcoin", current_price: 45000 },
+                { id: "ethereum", symbol: "eth", name: "Ethereum", current_price: 3000 }
             ];
-            
-            res.render('crypto', {
-                title: 'Cryptocurrency Markets',
+
+            res.status(500).json({
+                success: false,
                 coins: fallbackCoins,
-                user: res.locals.user,
-                error: 'Using fallback data - live prices temporarily unavailable'
+                message: 'Unable to load market data',
+                error: process.env.NODE_ENV === 'development' ? error.message : null
             });
         }
     }
@@ -207,7 +182,7 @@ class CryptoController {
 
             // Find existing portfolio to calculate new average price
             const existingPortfolio = await Portfolio.findOne({ userId, coinId }).lean();
-            
+
             let newAverageBuyPrice;
             if (existingPortfolio) {
                 const newTotalQuantity = existingPortfolio.quantity + quantityNum;
@@ -244,13 +219,10 @@ class CryptoController {
                 redisClient.del(`portfolio:${userId}`)
             ]);
 
-            res.redirect('/portfolio');
+            res.status(201).json({ success: true, message: 'Purchase successful' });
         } catch (error) {
             console.error('Buy error:', error);
-            res.status(400).render('error', {
-                message: 'Purchase Error',
-                error: error.message
-            });
+            res.status(400).json({ success: false, message: error.message });
         }
     }
 
@@ -321,20 +293,10 @@ class CryptoController {
             }
             // --- END CACHE INVALIDATION ---
 
-            // Redirect with success message
-            req.session.message = {
-                type: 'success',
-                text: `Successfully sold ${quantityNum} ${coinId}`
-            };
-            return res.redirect('/portfolio');
+            return res.json({ success: true, message: `Successfully sold ${quantityNum} ${coinId}` });
         } catch (error) {
             console.error('Sell error:', error);
-            // Return to portfolio with error message
-            req.session.message = {
-                type: 'error',
-                text: error.message
-            };
-            return res.redirect('/portfolio');
+            return res.status(400).json({ success: false, message: error.message });
         }
     }
 
@@ -344,23 +306,22 @@ class CryptoController {
     static async showPortfolio(req, res) {
         try {
             const userId = req.cookies.user;
-            
+
             // --- PORTFOLIO CACHE CHECK ---
             const cacheKey = `portfolio:${userId}`;
-            
+
             try {
                 const cachedDataString = await redisClient.get(cacheKey);
                 if (cachedDataString) {
                     // console.log(`[Cache HIT] Using cached portfolio for ${userId}`);
                     const cachedData = JSON.parse(cachedDataString);
-                    
+
                     // We need to re-fetch the user object for the layout, 
                     // but the portfolio data is cached.
-                    const user = await User.findById(userId).lean(); 
-                    
-                    return res.render('portfolio', {
-                        title: 'Portfolio',
-                        user: user, // Use fresh user data for layout
+                    const user = await User.findById(userId).lean();
+
+                    return res.json({
+                        success: true,
                         holdings: cachedData.holdings,
                         portfolioValue: cachedData.portfolioValue,
                         totalProfitLoss: cachedData.totalProfitLoss,
@@ -372,13 +333,13 @@ class CryptoController {
                 // Don't throw, just proceed to fetch
             }
             // --- END CACHE CHECK ---
-            
+
             // console.log(`[Cache MISS] Fetching portfolio for ${userId}`);
             const user = await User.findById(userId);
             const portfolio = await Portfolio.find({ userId });
 
             if (!user) {
-                return res.redirect('/auth/login');
+                return res.status(401).json({ success: false, message: 'Unauthorized' });
             }
 
             // Get current market data for portfolio coins
@@ -391,7 +352,7 @@ class CryptoController {
             if (portfolio.length > 0) {
                 try {
                     const coinIds = portfolio.map(p => p.coinId).join(',');
-                    
+
                     // Fetch both price and coin data
                     const [marketData, coinsData] = await Promise.all([
                         fetchCoinGeckoDataWithCache(
@@ -495,7 +456,7 @@ class CryptoController {
                     }));
                 }
             }
-            
+
             // --- STORE DATA IN CACHE ---
             const dataToCache = {
                 // user: user.toObject(), // No need to cache user, we fetch it fresh
@@ -504,16 +465,16 @@ class CryptoController {
                 totalProfitLoss,
                 totalProfitLossPercentage
             };
-            
+
             try {
                 await redisClient.setEx(cacheKey, PORTFOLIO_CACHE_TTL, JSON.stringify(dataToCache));
             } catch (cacheError) {
-                 console.error(`Redis SETEX error for key ${cacheKey}:`, cacheError.message);
+                console.error(`Redis SETEX error for key ${cacheKey}:`, cacheError.message);
             }
             // --- END STORE DATA ---
 
-            res.render('portfolio', {
-                title: 'Portfolio',
+            res.json({
+                success: true,
                 user,
                 holdings: portfolioWithCurrentPrices,
                 portfolioValue: totalPortfolioValue,
@@ -522,7 +483,8 @@ class CryptoController {
             });
         } catch (error) {
             console.error('Portfolio error:', error);
-            res.status(500).render('error', {
+            res.status(500).json({
+                success: false,
                 message: 'Error loading portfolio',
                 error: process.env.NODE_ENV === 'development' ? error.message : null
             });
@@ -538,9 +500,9 @@ class CryptoController {
             const user = await User.findById(userId).lean();
 
             if (!user) {
-                return res.redirect('/auth/login');
+                return res.status(401).json({ success: false, message: 'Unauthorized' });
             }
-            
+
             // --- New Sorting/Filtering Logic ---
             const { type, sortBy, order } = req.query;
 
@@ -554,12 +516,12 @@ class CryptoController {
             const sortQuery = {};
             const sortOrderVal = order === 'asc' ? 1 : -1; // Default to descending
             const sortByVal = sortBy || 'timestamp'; // Default to timestamp
-            
+
             // Whitelist sortable fields
             if (['timestamp', 'type', 'price', 'quantity', 'totalCost'].includes(sortByVal)) {
-                 sortQuery[sortByVal] = sortOrderVal;
+                sortQuery[sortByVal] = sortOrderVal;
             } else {
-                 sortQuery['timestamp'] = -1; // Default fallback
+                sortQuery['timestamp'] = -1; // Default fallback
             }
             // --- End New Logic ---
 
@@ -590,11 +552,9 @@ class CryptoController {
                 };
             });
 
-            res.render('history', {
-                title: 'Order History',
-                user,
+            res.json({
+                success: true,
                 transactions: formattedTransactions,
-                // Pass current options to view for dropdowns
                 currentOptions: {
                     type: type || 'all',
                     sortBy: sortByVal,
@@ -603,7 +563,8 @@ class CryptoController {
             });
         } catch (error) {
             console.error('History error:', error);
-            res.status(500).render('error', {
+            res.status(500).json({
+                success: false,
                 message: 'Error loading transaction history',
                 error: process.env.NODE_ENV === 'development' ? error.message : null
             });
@@ -659,8 +620,23 @@ class CryptoController {
             console.error('Chart data error:', error);
 
             // Generate realistic fallback data based on coinId and timeframe
+            // Generate realistic fallback data based on coinId and timeframe
             const basePrice = getBasePriceForCoin(req.params.coinId);
-            const mockRange = req.query.timeframe || req.query.days || '7';
+
+            // Re-calculate selected days for fallback context
+            const timeframe = (req.query.timeframe || req.query.days || '24h').toLowerCase();
+            const timeframeMap = {
+                '1h': { days: '1' },
+                '24h': { days: '1' },
+                '7d': { days: '7' },
+                '1m': { days: '30' },
+                '3m': { days: '90' },
+                '1y': { days: '365' },
+                'all': { days: 'max' }
+            };
+            const selected = timeframeMap[timeframe] || { days: req.query.days || '7' };
+            const mockRange = selected.days;
+
             const mockData = generateMockChartData(basePrice, mockRange);
 
             res.json(mockData);
@@ -676,19 +652,13 @@ class CryptoController {
 
             const userId = req.cookies.user;
 
-            // Fetch comprehensive coin data, chart data, and user's holdings in parallel
-            const [coinData, chartData, userHolding] = await Promise.all([
+            // Fetch comprehensive coin data and user's holdings (DECOUPLED chart data for speed)
+            const [coinData, userHolding] = await Promise.all([
                 fetchCoinGeckoDataWithCache(
                     `https://api.coingecko.com/api/v3/coins/${coinId}?localization=false&tickers=false&community_data=false&developer_data=false`,
                     null,
                     `coin-detail-${coinId}`,
                     5 * 60 * 1000 // 5 minutes cache
-                ),
-                fetchCoinGeckoDataWithCache(
-                    `https://api.coingecko.com/api/v3/coins/${coinId}/market_chart?vs_currency=usd&days=1`,
-                    null,
-                    `chart-${coinId}-1`,
-                    5 * 60 * 1000
                 ),
                 userId ? Portfolio.findOne({ userId, coinId }).lean() : Promise.resolve(null)
             ]);
@@ -700,8 +670,8 @@ class CryptoController {
             // Fetch news (using a placeholder for now, you can integrate a news API later)
             const newsData = [];
 
-            res.render('crypto-detail', {
-                title: `${coinData.name} (${coinData.symbol?.toUpperCase()})`,
+            res.json({
+                success: true,
                 coin: {
                     id: coinData.id,
                     name: coinData.name,
@@ -726,19 +696,15 @@ class CryptoController {
                     genesis_date: coinData.genesis_date
                 },
                 userHolding,
-                chartData: chartData?.prices || [],
-                news: newsData,
-                user: res.locals.user
+                news: newsData
             });
         } catch (error) {
             console.error('Crypto detail error:', error);
-            
-            // Fallback data
             const { coinId } = req.params;
             const basePrice = getBasePriceForCoin(coinId);
-            
-            res.render('crypto-detail', {
-                title: coinId.charAt(0).toUpperCase() + coinId.slice(1),
+
+            res.json({
+                success: true,
                 coin: {
                     id: coinId,
                     name: coinId.charAt(0).toUpperCase() + coinId.slice(1),
@@ -763,8 +729,7 @@ class CryptoController {
                     genesis_date: null
                 },
                 chartData: generateMockChartData(basePrice, '1'),
-                news: [],
-                user: res.locals.user
+                news: []
             });
         }
     }

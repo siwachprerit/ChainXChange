@@ -3,12 +3,11 @@ const path = require('path');
 const mongoose = require('mongoose');
 const cookieParser = require('cookie-parser');
 const dotenv = require('dotenv');
-const expressHandlebars = require('express-handlebars');
 const session = require('express-session');
 const http = require('http');
-const { Server } = require('socket.io');
 const compression = require('compression');
 const MongoStore = require('connect-mongo');
+const cors = require('cors');
 
 const authRoutes = require('./routes/auth.js');
 const cryptoRoutes = require('./routes/crypto.js');
@@ -21,99 +20,36 @@ const CryptoController = require('./controllers/cryptoController');
 dotenv.config();
 
 const app = express();
-const server = http.createServer(app);
-const io = new Server(server);
-
-// Handlebars Setup
-const hbs = expressHandlebars.create({
-    extname: 'hbs',
-    defaultLayout: 'main',
-    layoutsDir: path.join(__dirname, 'views', 'layouts'),
-    partialsDir: path.join(__dirname, 'views', 'partials'),
-    helpers: {
-        formatNumber: function (num) {
-            if (!num) return '0';
-            if (num >= 1000000) {
-                return (num / 1000000).toFixed(2) + 'M';
-            } else if (num >= 1000) {
-                return (num / 1000).toFixed(2) + 'K';
-            }
-            return num.toString();
-        },
-        formatLargeNumber: function (num) {
-            if (!num) return 'N/A';
-            return num.toLocaleString();
-        },
-        formatPrice: function (price) {
-            if (price == null || price === undefined) {
-                return 'N/A';
-            }
-            if (price < 0.01) {
-                return price.toPrecision(2);
-            } else if (price < 1) {
-                return price.toFixed(4);
-            } else if (price < 10) {
-                return price.toFixed(2);
-            } else {
-                return price.toFixed(2);
-            }
-        },
-        getFullYear: function() {
-            return new Date().getFullYear();
-        },
-        gt: function(a, b) {
-            return a > b;
-        },
-        lt: function(a, b) {
-            return a < b;
-        },
-        eq: function(a, b) {
-            return a === b;
-        },
-        multiply: function(a, b) {
-            return a * b;
-        },
-        divide: function(a, b) {
-            return b !== 0 ? a / b : 0;
-        },
-        subtract: function(a, b) {
-            return a - b;
-        },
-        add: function(a, b) {
-            return a + b;
-        },
-        calculateRangePosition: function(min, current, max) {
-            if (!min || !current || !max || max === min) return 50;
-            const position = ((current - min) / (max - min)) * 100;
-            return Math.max(0, Math.min(100, position)).toFixed(2);
-        },
-        json: function(context) {
-            return JSON.stringify(context);
-        }
-    }
-});
 
 // Middleware Setup
-app.engine('hbs', hbs.engine);
-app.set('view engine', 'hbs');
-app.set('views', path.join(__dirname, 'views'));
-
+app.use(cors({
+    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    credentials: true
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser(process.env.COOKIE_SECRET || 'your-secret-key'));
 app.use(compression());
-app.use(express.static(path.join(__dirname, 'public'), { maxAge: '1h' }));
+
+// Serve React static files from the 'client/dist' directory in production
+if (process.env.NODE_ENV === 'production') {
+    app.use(express.static(path.join(__dirname, 'client/dist')));
+} else {
+    // In development, we don't serve static files from here usually, 
+    // but just in case public folder has assets
+    app.use(express.static(path.join(__dirname, 'public')));
+}
 
 // MongoDB Connection
 mongoose.connect(process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/crypto-trading', {
     retryWrites: true,
     w: 'majority'
 })
-.then(() => console.log('Connected to MongoDB'))
-.catch(err => {
-    console.error('MongoDB connection error:', err);
-    process.exit(1);
-});
+    .then(() => console.log('Connected to MongoDB'))
+    .catch(err => {
+        console.error('MongoDB connection error:', err);
+        process.exit(1);
+    });
 
 // Session Configuration
 app.use(session({
@@ -127,6 +63,7 @@ app.use(session({
     cookie: {
         secure: process.env.NODE_ENV === 'production',
         httpOnly: true,
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
         maxAge: 24 * 60 * 60 * 1000
     }
 }));
@@ -148,43 +85,53 @@ app.use(async (req, res, next) => {
     next();
 });
 
-// Routes
+// API Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/crypto', cryptoRoutes);
+app.use('/api/payment', paymentRoutes);
 
-app.use('/auth', authRoutes);
-app.use('/crypto', cryptoRoutes);
-app.use('/payment', paymentRoutes);
+// Main Application API Routes (for legacy compatibility or specific JSON endpoints)
+app.get('/api', HomeController.showHome);
+app.get('/api/portfolio', isAuthenticated, CryptoController.showPortfolio);
+app.get('/api/profile', isAuthenticated, require('./controllers/authController').showProfile);
 
-// Main Application Routes
-app.get('/', HomeController.showHome);
-app.get('/portfolio', isAuthenticated, CryptoController.showPortfolio);
-app.get('/profile', isAuthenticated, require('./controllers/authController').showProfile);
-
-// WebSocket Setup for real-time updates
-io.on('connection', (socket) => {
-    console.log('User connected:', socket.id);
-    
-    socket.on('disconnect', () => {
-        console.log('User disconnected:', socket.id);
+// Handle React routing, return all requests to React app in production
+if (process.env.NODE_ENV === 'production') {
+    app.get('*', (req, res) => {
+        res.sendFile(path.join(__dirname, 'client/dist/index.html'));
     });
-});
+}
 
 // Error Handling
 app.use((req, res, next) => {
-    res.status(404).render('error', {
-        message: 'Page Not Found',
-        error: process.env.NODE_ENV === 'development' ? 'The requested page does not exist.' : null
-    });
+    // If not found and not an API route, send index.html (for client-side routing) 
+    // BUT only in production. In dev, we just send 404 for API.
+    if (process.env.NODE_ENV === 'production' && !req.path.startsWith('/api')) {
+        res.sendFile(path.join(__dirname, 'client/dist/index.html'));
+    } else {
+        res.status(404).json({
+            success: false,
+            message: 'API Endpoint Not Found'
+        });
+    }
 });
 
 app.use((err, req, res, next) => {
     console.error(err.stack);
-    res.status(500).render('error', {
+    res.status(500).json({
+        success: false,
         message: 'Internal Server Error',
         error: process.env.NODE_ENV === 'development' ? err.message : null
     });
 });
 
 const PORT = process.env.PORT || 8000;
-server.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+// Note: server.listen is used instead of app.listen because we might re-add Socket.io later
+const server = http.createServer(app);
+
+// Only listen if run directly (not imported as a module for Vercel)
+if (require.main === module) {
+    server.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+}
 
 module.exports = app;

@@ -45,26 +45,23 @@ class HomeController {
                     }
                 ];
                 console.log('Using fallback data');
-                return res.render('home', {
-                    title: 'Home',
+                return res.json({
+                    success: true,
                     topCryptos: fallbackData,
-                    user: res.locals.user,
-                    error: 'Using fallback data - live prices temporarily unavailable'
+                    message: 'Using fallback data - live prices temporarily unavailable'
                 });
             }
 
-            res.render('home', {
-                title: 'Home',
-                topCryptos,
-                user: res.locals.user
+            res.json({
+                success: true,
+                topCryptos
             });
         } catch (error) {
             console.error('Home page error:', error);
-            res.render('home', {
-                title: 'Home',
-                topCryptos: [],
-                user: res.locals.user,
-                error: 'Unable to load market data'
+            res.status(500).json({
+                success: false,
+                message: 'Unable to load market data',
+                error: process.env.NODE_ENV === 'development' ? error.message : null
             });
         }
     }

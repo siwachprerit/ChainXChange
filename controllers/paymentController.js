@@ -9,9 +9,9 @@ class PaymentController {
         try {
             const userId = req.cookies.user;
             const user = await User.findById(userId).lean();
-            
+
             if (!user) {
-                return res.redirect('/auth/login');
+                return res.status(401).json({ success: false, message: 'Unauthorized' });
             }
 
             // Fetch payment transaction history
@@ -36,14 +36,15 @@ class PaymentController {
                 };
             });
 
-            res.render('wallet', {
-                title: 'Wallet',
+            res.json({
+                success: true,
                 user: user,
                 transactions: formattedTransactions
             });
         } catch (error) {
             console.error('Wallet page error:', error);
-            res.status(500).render('error', {
+            res.status(500).json({
+                success: false,
                 message: 'Error loading wallet',
                 error: process.env.NODE_ENV === 'development' ? error.message : null
             });
@@ -60,17 +61,17 @@ class PaymentController {
 
             // Validate input
             if (!amount || !cardNumber || !cardHolder || !expiryDate || !cvv) {
-                return res.status(400).json({ 
-                    success: false, 
-                    message: 'All fields are required' 
+                return res.status(400).json({
+                    success: false,
+                    message: 'All fields are required'
                 });
             }
 
             const amountNum = parseFloat(amount);
             if (isNaN(amountNum) || amountNum <= 0) {
-                return res.status(400).json({ 
-                    success: false, 
-                    message: 'Invalid amount' 
+                return res.status(400).json({
+                    success: false,
+                    message: 'Invalid amount'
                 });
             }
 
@@ -94,16 +95,16 @@ class PaymentController {
                 $inc: { wallet: amountNum }
             });
 
-            res.json({ 
-                success: true, 
+            res.json({
+                success: true,
                 message: 'Money added successfully',
                 newBalance: (await User.findById(userId)).wallet
             });
         } catch (error) {
             console.error('Add money error:', error);
-            res.status(500).json({ 
-                success: false, 
-                message: 'Error processing payment' 
+            res.status(500).json({
+                success: false,
+                message: 'Error processing payment'
             });
         }
     }
@@ -118,34 +119,34 @@ class PaymentController {
 
             // Validate input
             if (!amount || !cardNumber || !cardHolder || !expiryDate || !cvv) {
-                return res.status(400).json({ 
-                    success: false, 
-                    message: 'All fields are required' 
+                return res.status(400).json({
+                    success: false,
+                    message: 'All fields are required'
                 });
             }
 
             const amountNum = parseFloat(amount);
             if (isNaN(amountNum) || amountNum <= 0) {
-                return res.status(400).json({ 
-                    success: false, 
-                    message: 'Invalid amount' 
+                return res.status(400).json({
+                    success: false,
+                    message: 'Invalid amount'
                 });
             }
 
             const user = await User.findById(userId);
-            
+
             if (!user) {
-                return res.status(404).json({ 
-                    success: false, 
-                    message: 'User not found' 
+                return res.status(404).json({
+                    success: false,
+                    message: 'User not found'
                 });
             }
 
             // Check if user has sufficient balance
             if (!user.wallet || user.wallet < amountNum) {
-                return res.status(400).json({ 
-                    success: false, 
-                    message: `Insufficient balance. Available: $${user.wallet || 0}` 
+                return res.status(400).json({
+                    success: false,
+                    message: `Insufficient balance. Available: $${user.wallet || 0}`
                 });
             }
 
@@ -166,16 +167,16 @@ class PaymentController {
                 $inc: { wallet: -amountNum }
             });
 
-            res.json({ 
-                success: true, 
+            res.json({
+                success: true,
                 message: 'Withdrawal successful',
                 newBalance: (await User.findById(userId)).wallet
             });
         } catch (error) {
             console.error('Withdrawal error:', error);
-            res.status(500).json({ 
-                success: false, 
-                message: 'Error processing withdrawal' 
+            res.status(500).json({
+                success: false,
+                message: 'Error processing withdrawal'
             });
         }
     }
