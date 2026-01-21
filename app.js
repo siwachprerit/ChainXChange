@@ -97,7 +97,7 @@ app.get('/api/profile', isAuthenticated, require('./controllers/authController')
 
 // Handle React routing, return all requests to React app in production
 if (process.env.NODE_ENV === 'production') {
-    app.get('*', (req, res) => {
+    app.get(/(.*)/, (req, res) => {
         res.sendFile(path.join(__dirname, 'client/dist/index.html'));
     });
 }
