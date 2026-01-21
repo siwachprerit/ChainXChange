@@ -2,12 +2,12 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { UserPlus, User, Mail, Lock, ArrowLeft, LogIn } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 const Signup = () => {
     const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
     const { signup } = useAuth();
@@ -15,17 +15,17 @@ const Signup = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setError('');
         setLoading(true);
         try {
             const data = await signup(username, email, password);
             if (data.success) {
+                toast.success('Account created successfully!');
                 navigate('/profile');
             } else {
-                setError(data.error || 'Registration failed');
+                toast.error(data.error || 'Registration failed');
             }
         } catch (err) {
-            setError('An error occurred during registration');
+            toast.error('An error occurred during registration');
         } finally {
             setLoading(false);
         }
@@ -46,8 +46,6 @@ const Signup = () => {
                     </div>
                     <div className="card-subtitle">Get started with crypto trading</div>
                 </div>
-
-                {error && <div className="alert alert-error">{error}</div>}
 
                 <form onSubmit={handleSubmit}>
                     <div className="form-group">

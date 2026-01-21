@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { NotificationProvider } from './context/NotificationContext';
 import Navbar from './components/Navbar';
 import Markets from './pages/Markets';
 import Login from './pages/Login';
@@ -9,6 +10,8 @@ import Portfolio from './pages/Portfolio';
 import Profile from './pages/Profile';
 import CryptoDetail from './pages/CryptoDetail';
 import WalletPage from './pages/WalletPage';
+import TransactionHistory from './pages/TransactionHistory';
+import { Toaster } from 'react-hot-toast';
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -25,16 +28,17 @@ const PageTitleUpdater = () => {
     const path = location.pathname;
     let title = 'ChainXchange - Crypto Trading Platform';
 
-    if (path === '/') title = 'Markets | ChainXchange';
-    else if (path === '/login') title = 'Login | ChainXchange';
-    else if (path === '/signup') title = 'Register | ChainXchange';
-    else if (path === '/portfolio') title = 'Portfolio | ChainXchange';
-    else if (path === '/profile') title = 'Profile | ChainXchange';
-    else if (path === '/wallet') title = 'Wallet | ChainXchange';
+    if (path === '/') title = 'Markets';
+    else if (path === '/login') title = 'Login';
+    else if (path === '/signup') title = 'Register';
+    else if (path === '/portfolio') title = 'Portfolio';
+    else if (path === '/profile') title = 'Profile';
+    else if (path === '/wallet') title = 'Wallet';
+    else if (path === '/history') title = 'Trade History';
     else if (path.startsWith('/crypto/')) {
       // We set a generic title here, letting the page component set a specific one
       // or we can try to leave it if we want the component to take over completely.
-      title = 'Crypto Detail | ChainXchange';
+      title = 'Crypto Detail';
     }
 
     document.title = title;
@@ -46,6 +50,7 @@ const PageTitleUpdater = () => {
 const AppContent = () => {
   return (
     <Router>
+      <Toaster position="top-right" reverseOrder={false} />
       <PageTitleUpdater />
       <Navbar />
       <main className="container">
@@ -78,6 +83,14 @@ const AppContent = () => {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/history"
+            element={
+              <ProtectedRoute>
+                <TransactionHistory />
+              </ProtectedRoute>
+            }
+          />
         </Routes>
       </main>
       <footer className="footer" style={{ textAlign: 'center', padding: '2rem', borderTop: '1px solid var(--border-color)', marginTop: '4rem' }}>
@@ -90,7 +103,9 @@ const AppContent = () => {
 function App() {
   return (
     <AuthProvider>
-      <AppContent />
+      <NotificationProvider>
+        <AppContent />
+      </NotificationProvider>
     </AuthProvider>
   );
 }

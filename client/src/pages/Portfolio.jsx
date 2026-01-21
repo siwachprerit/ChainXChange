@@ -1,14 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
-import { PieChart, ArrowLeft, ShoppingCart, TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { TrendingUp, TrendingDown, DollarSign, Wallet, PieChart, ShoppingCart, ArrowLeft, Bell } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useNotifications } from '../context/NotificationContext';
+import { Chart as ChartJS, ArcElement, Tooltip as ChartTooltip, Legend as ChartLegend } from 'chart.js';
+import { Doughnut } from 'react-chartjs-2';
+
+ChartJS.register(ArcElement, ChartTooltip, ChartLegend);
 
 const Portfolio = () => {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [theme, setTheme] = useState(document.body.getAttribute('data-theme') || 'light');
     const { user } = useAuth();
+    const { addNotification } = useNotifications();
 
     const fetchPortfolio = async () => {
         try {
@@ -26,16 +34,26 @@ const Portfolio = () => {
     };
 
     useEffect(() => {
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.attributeName === 'data-theme') {
+                    setTheme(document.body.getAttribute('data-theme'));
+                }
+            });
+        });
+
+        observer.observe(document.body, { attributes: true });
+        return () => observer.disconnect();
+    }, []);
+
+    useEffect(() => {
         if (user) {
             fetchPortfolio();
         }
     }, [user]);
 
-    const [message, setMessage] = useState(null);
-
     const handleSell = async (e, coinId, currentPrice, maxQuantity) => {
         e.preventDefault();
-        setMessage(null);
         const quantity = e.target.quantity.value;
 
         try {
@@ -46,15 +64,15 @@ const Portfolio = () => {
             });
 
             if (response.data.success) {
-                setMessage({ type: 'success', text: `Successfully sold ${quantity} units!` });
+                toast.success(`Successfully sold ${quantity} units!`);
+                addNotification(`Sold ${quantity} units of ${coinId} at $${currentPrice}`, 'success');
                 fetchPortfolio(); // Refresh data
                 e.target.reset();
-                setTimeout(() => setMessage(null), 3000);
             } else {
-                setMessage({ type: 'error', text: response.data.message });
+                toast.error(response.data.message);
             }
         } catch (err) {
-            setMessage({ type: 'error', text: 'Error processing sale' });
+            toast.error('Error processing sale');
         }
     };
 
@@ -101,113 +119,154 @@ const Portfolio = () => {
                 <p className="page-subtitle">Track your cryptocurrency investments</p>
             </div>
 
-            {message && (
-                <div className={`alert ${message.type === 'success' ? 'alert-success' : 'alert-error'}`} style={{ marginBottom: '1rem', padding: '0.75rem', borderRadius: '8px' }}>
-                    {message.type === 'success' ? '✓' : '⚠'} {message.text}
-                </div>
-            )}
-
-            <div className="portfolio-summary" style={{
+            <div style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
                 gap: '1.5rem',
-                marginBottom: '2rem'
+                marginBottom: '2.5rem'
             }}>
-                <div className="stat-card">
-                    <div className="stat-label">Total Portfolio Value</div>
-                    <div className="stat-value">${formatPrice(data.portfolioValue)}</div>
-                    <div className={`stat-change ${data.totalProfitLoss >= 0 ? 'positive' : 'negative'}`}>
-                        {data.totalProfitLoss >= 0 ? <TrendingUp size={16} style={{ marginRight: 4 }} /> : <TrendingDown size={16} style={{ marginRight: 4 }} />}
+                <div className="card" style={{ padding: '1.75rem', borderLeft: '4px solid var(--accent-primary)' }}>
+                    <div className="stat-label" style={{ fontWeight: 600 }}>Total Portfolio Value</div>
+                    <div className="stat-value" style={{ fontSize: '1.75rem', marginTop: '0.5rem' }}>${formatPrice(data.portfolioValue)}</div>
+                    <div className={`stat-change ${data.totalProfitLoss >= 0 ? 'positive' : 'negative'}`} style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '0.5rem' }}>
+                        {data.totalProfitLoss >= 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
                         {data.totalProfitLoss >= 0 ? '+' : ''}{formatPrice(data.totalProfitLossPercentage)}%
                     </div>
                 </div>
 
-                <div className="stat-card">
-                    <div className="stat-label">Total Profit/Loss</div>
-                    <div className={`stat-value ${data.totalProfitLoss >= 0 ? 'text-success' : 'text-danger'}`} style={{ color: data.totalProfitLoss >= 0 ? 'var(--success-color)' : 'var(--danger-color)' }}>
-                        {data.totalProfitLoss >= 0 ? '+' : ''}${formatPrice(data.totalProfitLoss)}
+                <div className="card" style={{ padding: '1.75rem', borderLeft: '4px solid var(--success-color)' }}>
+                    <div className="stat-label" style={{ fontWeight: 600 }}>Total Net Profit</div>
+                    <div className={`stat-value ${data.totalProfitLoss >= 0 ? 'text-success' : 'text-danger'}`} style={{ fontSize: '1.75rem', marginTop: '0.5rem', color: data.totalProfitLoss >= 0 ? 'var(--success-color)' : 'var(--danger-color)' }}>
+                        {data.totalProfitLoss >= 0 ? '+' : '-'}${formatPrice(Math.abs(data.totalProfitLoss))}
+                    </div>
+                    <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>Lifetime earnings</div>
+                </div>
+
+                <div className="card" style={{ padding: '1.75rem', borderLeft: '4px solid #627eea' }}>
+                    <div className="stat-label" style={{ fontWeight: 600 }}>Active Assets</div>
+                    <div className="stat-value" style={{ fontSize: '1.75rem', marginTop: '0.5rem' }}>{data.holdings.length}</div>
+                    <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>Diversified across coins</div>
+                </div>
+            </div>
+
+            <div className="portfolio-content-grid" style={{
+                display: 'grid',
+                gridTemplateColumns: data.holdings.length > 0 ? '1fr 380px' : '1fr',
+                gap: '2.5rem',
+                marginBottom: '2rem'
+            }}>
+                <div className="card" style={{ padding: '1.5rem 0' }}>
+                    <div className="card-header" style={{ border: 'none', padding: '0 2rem 1.5rem' }}>
+                        <div className="card-title">Your Holdings</div>
+                        <div className="card-subtitle">Current positions in your portfolio</div>
+                    </div>
+
+                    <div className="table-container" style={{ border: 'none', boxShadow: 'none' }}>
+                        <table className="table">
+                            <thead>
+                                <tr>
+                                    <th style={{ paddingLeft: '2rem' }}>Asset</th>
+                                    <th className="numeric-cell">Quantity</th>
+                                    <th className="numeric-cell">Avg. Price</th>
+                                    <th className="numeric-cell">Current</th>
+                                    <th className="numeric-cell">Value</th>
+                                    <th style={{ textAlign: 'center' }}>P&L</th>
+                                    <th style={{ paddingRight: '2rem' }}>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {data.holdings.map((holding) => {
+                                    const totalValue = holding.quantity * holding.currentPrice;
+                                    const pnlPercent = holding.averageBuyPrice > 0
+                                        ? ((holding.currentPrice - holding.averageBuyPrice) / holding.averageBuyPrice) * 100
+                                        : 0;
+
+                                    return (
+                                        <tr key={holding.coinId}>
+                                            <td style={{ padding: '1.25rem 1.5rem', paddingLeft: '2rem' }}>
+                                                <Link to={`/crypto/${holding.coinId}`} className="crypto-name" style={{ textDecoration: 'none', color: 'inherit' }}>
+                                                    <img src={holding.image} alt={holding.crypto} className="crypto-icon" style={{ width: '40px', height: '40px' }} />
+                                                    <div>
+                                                        <div style={{ fontWeight: 700, fontSize: '1rem' }}>{holding.crypto}</div>
+                                                        <div className="crypto-symbol" style={{ fontWeight: 500, opacity: 0.8 }}>{holding.symbol?.toUpperCase()}</div>
+                                                    </div>
+                                                </Link>
+                                            </td>
+                                            <td className="numeric-cell" style={{ fontWeight: 600 }}>{holding.quantity < 1 ? holding.quantity.toFixed(6) : holding.quantity.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                                            <td className="numeric-cell" style={{ fontWeight: 500 }}>${formatPrice(holding.averageBuyPrice)}</td>
+                                            <td className="numeric-cell" style={{ fontWeight: 700 }}>${formatPrice(holding.currentPrice)}</td>
+                                            <td className="numeric-cell" style={{ fontWeight: 700 }}>${formatPrice(totalValue)}</td>
+                                            <td className={`change-cell ${pnlPercent >= 0 ? 'change-positive' : 'change-negative'}`} style={{ fontWeight: 700 }}>
+                                                {pnlPercent >= 0 ? '+' : ''}{pnlPercent.toFixed(2)}%
+                                            </td>
+                                            <td style={{ paddingRight: '2rem' }}>
+                                                <form onSubmit={(e) => handleSell(e, holding.coinId, holding.currentPrice, holding.quantity)} className="action-form" style={{ display: 'flex', gap: '8px' }}>
+                                                    <input
+                                                        type="number"
+                                                        name="quantity"
+                                                        min="0.000001"
+                                                        max={holding.quantity}
+                                                        step="any"
+                                                        required
+                                                        placeholder="0.00"
+                                                        className="form-control"
+                                                        style={{ width: '80px', height: '32px', padding: '0 8px', borderRadius: '6px', fontSize: '0.875rem' }}
+                                                    />
+                                                    <button type="submit" className="btn btn-danger btn-sm" style={{ borderRadius: '6px' }}>Sell</button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
 
-                <div className="stat-card">
-                    <div className="stat-label">Total Coins</div>
-                    <div className="stat-value">{data.holdings.length}</div>
-                </div>
-            </div>
-
-            <div className="card">
-                <div className="card-header">
-                    <div className="card-title">Your Holdings</div>
-                    <div className="card-subtitle">Current positions in your portfolio</div>
-                </div>
-
-                <div className="table-container">
-                    <table className="table">
-                        <thead>
-                            <tr>
-                                <th>Asset</th>
-                                <th className="numeric-cell">Quantity</th>
-                                <th className="numeric-cell">Avg. Buy Price</th>
-                                <th className="numeric-cell">Current Price</th>
-                                <th className="numeric-cell">Total Value</th>
-                                <th style={{ textAlign: 'center' }}>P&L</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {data.holdings.map((holding) => {
-                                const totalValue = holding.quantity * holding.currentPrice;
-                                const pnlPercent = holding.averageBuyPrice > 0
-                                    ? ((holding.currentPrice - holding.averageBuyPrice) / holding.averageBuyPrice) * 100
-                                    : 0;
-
-                                return (
-                                    <tr key={holding.coinId}>
-                                        <td>
-                                            <Link to={`/crypto/${holding.coinId}`} className="crypto-name" style={{ textDecoration: 'none', color: 'inherit' }}>
-                                                <img src={holding.image} alt={holding.crypto} className="crypto-icon" />
-                                                <div>
-                                                    <div style={{ fontWeight: 600 }}>{holding.crypto}</div>
-                                                    <div className="crypto-symbol">{holding.symbol?.toUpperCase()}</div>
-                                                </div>
-                                            </Link>
-                                        </td>
-                                        <td className="numeric-cell">{formatPrice(holding.quantity)}</td>
-                                        <td className="numeric-cell">${formatPrice(holding.averageBuyPrice)}</td>
-                                        <td className="numeric-cell">${formatPrice(holding.currentPrice)}</td>
-                                        <td className="numeric-cell">${formatPrice(totalValue)}</td>
-                                        <td className={`change-cell ${pnlPercent >= 0 ? 'change-positive' : 'change-negative'}`}>
-                                            {pnlPercent >= 0 ? '+' : ''}{pnlPercent.toFixed(2)}%
-                                        </td>
-                                        <td>
-                                            <form onSubmit={(e) => handleSell(e, holding.coinId, holding.currentPrice, holding.quantity)} className="action-form">
-                                                <input
-                                                    type="number"
-                                                    name="quantity"
-                                                    min="0.000001"
-                                                    max={holding.quantity}
-                                                    step="0.000001"
-                                                    required
-                                                    placeholder="0.00"
-                                                    className="quantity-input"
-                                                    style={{ width: '80px', marginRight: '0.5rem' }}
-                                                />
-                                                <button type="submit" className="btn btn-danger btn-sm">
-                                                    Sell
-                                                </button>
-                                            </form>
-                                        </td>
-                                    </tr>
-                                );
-                            })}
-                        </tbody>
-                    </table>
-                </div>
+                {data.holdings.length > 0 && (
+                    <div className="card" style={{ padding: '2rem' }}>
+                        <div className="card-header" style={{ border: 'none', padding: '0 0 2rem' }}>
+                            <div className="card-title">Asset Allocation</div>
+                            <div className="card-subtitle">Distribution of your portfolio</div>
+                        </div>
+                        <div style={{ height: '350px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                            <Doughnut
+                                data={{
+                                    labels: data.holdings.map(h => h.crypto),
+                                    datasets: [{
+                                        data: data.holdings.map(h => h.quantity * h.currentPrice),
+                                        backgroundColor: [
+                                            '#f7931a', '#627eea', '#00ffad', '#f3ba2f', '#26a17b',
+                                            '#e84142', '#345d9d', '#9b59b6', '#3498db', '#e67e22'
+                                        ],
+                                        borderWidth: 0,
+                                        cutout: '75%'
+                                    }]
+                                }}
+                                options={{
+                                    plugins: {
+                                        legend: {
+                                            display: true,
+                                            position: 'bottom',
+                                            labels: {
+                                                color: theme === 'dark' ? '#eaecef' : '#4a5568',
+                                                usePointStyle: true,
+                                                padding: 24,
+                                                font: { size: 12, weight: 600 }
+                                            }
+                                        }
+                                    },
+                                    maintainAspectRatio: false
+                                }}
+                            />
+                        </div>
+                    </div>
+                )}
             </div>
 
             <div style={{ marginTop: '2rem', textAlign: 'center' }}>
-                <Link to="/" className="btn btn-secondary">
-                    <ArrowLeft size={16} style={{ marginRight: '6px' }} /> Back to Markets
+                <Link to="/" className="btn btn-secondary" style={{ borderRadius: '12px', padding: '0.75rem 1.5rem' }}>
+                    <ArrowLeft size={16} style={{ marginRight: '6px' }} /> Markets
                 </Link>
             </div>
         </div>

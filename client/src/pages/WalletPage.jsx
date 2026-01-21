@@ -3,9 +3,12 @@ import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { Wallet, ArrowLeft, CreditCard, Shield, PlusCircle, MinusCircle, CheckCircle, AlertCircle, Clock } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useNotifications } from '../context/NotificationContext';
+import toast from 'react-hot-toast';
 
 const WalletPage = () => {
     const { user, refreshUser } = useAuth();
+    const { addNotification } = useNotifications();
     const [amount, setAmount] = useState('');
     const [cardNumber, setCardNumber] = useState('');
     const [expiry, setExpiry] = useState('');
@@ -52,6 +55,8 @@ const WalletPage = () => {
 
             if (response.data.success) {
                 setMessage(response.data.message);
+                toast.success(response.data.message);
+                addNotification(`${activeTab === 'deposit' ? 'Deposited' : 'Withdrew'} $${amount} ${activeTab === 'deposit' ? 'to' : 'from'} wallet`, 'success');
                 setAmount('');
                 setCardNumber('');
                 setExpiry('');
@@ -112,37 +117,73 @@ const WalletPage = () => {
 
                 {/* Transaction Form Card */}
                 <div>
-                    <div className="card">
+                    <div className="card" style={{ padding: '2.5rem 2rem' }}>
                         <div className="balance-display" style={{
-                            background: 'linear-gradient(135deg, var(--primary-color), var(--primary-dark))',
-                            padding: '1.5rem',
-                            borderRadius: '12px',
-                            color: 'white',
-                            marginBottom: '1.5rem'
+                            background: 'var(--gradient-primary)',
+                            padding: '2rem',
+                            borderRadius: '16px',
+                            color: '#000',
+                            marginBottom: '2rem',
+                            boxShadow: '0 10px 25px -5px rgba(240, 185, 11, 0.3)',
+                            position: 'relative',
+                            overflow: 'hidden'
                         }}>
-                            <div style={{ fontSize: '0.9rem', opacity: 0.9, marginBottom: '0.5rem' }}>Available Balance</div>
-                            <div style={{ fontSize: '2rem', fontWeight: 'bold' }}>
-                                ${user?.wallet ? user.wallet.toLocaleString(undefined, { minimumFractionDigits: 2 }) : '0.00'}
+                            <div style={{ position: 'relative', zIndex: 1 }}>
+                                <div style={{ fontSize: '0.9rem', opacity: 0.8, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Available Balance</div>
+                                <div style={{ fontSize: '2.5rem', fontWeight: 800, margin: '0.5rem 0' }}>
+                                    ${user?.wallet ? user.wallet.toLocaleString(undefined, { minimumFractionDigits: 2 }) : '0.00'}
+                                </div>
+                                <div style={{ fontSize: '0.85rem', opacity: 0.7, display: 'flex', alignItems: 'center', fontWeight: 600 }}>
+                                    <Shield size={14} style={{ marginRight: '6px' }} /> 256-bit SSL Secure
+                                </div>
                             </div>
-                            <div style={{ fontSize: '0.8rem', opacity: 0.8, marginTop: '0.5rem', display: 'flex', alignItems: 'center' }}>
-                                <Shield size={12} style={{ marginRight: '4px' }} /> Secure & Encrypted
+                            <div style={{
+                                position: 'absolute',
+                                right: '-20px',
+                                bottom: '-20px',
+                                opacity: 0.1,
+                                transform: 'rotate(-15deg)'
+                            }}>
+                                <Wallet size={120} />
                             </div>
                         </div>
 
-                        <div className="tabs" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginBottom: '1.5rem', background: 'var(--bg-tertiary)', padding: '4px', borderRadius: '8px' }}>
+                        <div className="tabs" style={{
+                            display: 'grid',
+                            gridTemplateColumns: '1fr 1fr',
+                            gap: '8px',
+                            marginBottom: '2.5rem',
+                            background: 'var(--bg-tertiary)',
+                            padding: '6px',
+                            borderRadius: '14px'
+                        }}>
                             <button
-                                className={`btn ${activeTab === 'deposit' ? 'btn-primary' : 'btn-ghost'}`}
+                                className="btn"
                                 onClick={() => setActiveTab('deposit')}
-                                style={{ borderRadius: '6px', justifyContent: 'center' }}
+                                style={{
+                                    borderRadius: '10px',
+                                    justifyContent: 'center',
+                                    background: activeTab === 'deposit' ? 'var(--bg-primary)' : 'transparent',
+                                    color: activeTab === 'deposit' ? 'var(--text-primary)' : 'var(--text-secondary)',
+                                    boxShadow: activeTab === 'deposit' ? 'var(--shadow-sm)' : 'none',
+                                    height: '44px'
+                                }}
                             >
-                                <PlusCircle size={16} style={{ marginRight: '6px' }} /> Deposit
+                                <PlusCircle size={18} style={{ marginRight: '8px' }} /> Deposit
                             </button>
                             <button
-                                className={`btn ${activeTab === 'withdraw' ? 'btn-danger' : 'btn-ghost'}`}
+                                className="btn"
                                 onClick={() => setActiveTab('withdraw')}
-                                style={{ borderRadius: '6px', justifyContent: 'center' }}
+                                style={{
+                                    borderRadius: '10px',
+                                    justifyContent: 'center',
+                                    background: activeTab === 'withdraw' ? 'var(--bg-primary)' : 'transparent',
+                                    color: activeTab === 'withdraw' ? 'var(--text-primary)' : 'var(--text-secondary)',
+                                    boxShadow: activeTab === 'withdraw' ? 'var(--shadow-sm)' : 'none',
+                                    height: '44px'
+                                }}
                             >
-                                <MinusCircle size={16} style={{ marginRight: '6px' }} /> Withdraw
+                                <MinusCircle size={18} style={{ marginRight: '8px' }} /> Withdraw
                             </button>
                         </div>
 
@@ -233,8 +274,15 @@ const WalletPage = () => {
 
                             <button
                                 type="submit"
-                                className={`btn ${activeTab === 'deposit' ? 'btn-primary' : 'btn-danger'}`}
-                                style={{ width: '100%', marginTop: '1rem' }}
+                                className={`btn btn-lg ${activeTab === 'deposit' ? 'btn-primary' : 'btn-danger'}`}
+                                style={{
+                                    width: '100%',
+                                    marginTop: '2rem',
+                                    height: '56px',
+                                    borderRadius: '14px',
+                                    fontSize: '1.1rem',
+                                    boxShadow: activeTab === 'deposit' ? '0 10px 20px -10px var(--accent-primary)' : '0 10px 20px -10px var(--danger-color)'
+                                }}
                                 disabled={loading}
                             >
                                 {loading ? 'Processing...' : (activeTab === 'deposit' ? 'Add Funds' : 'Withdraw Funds')}

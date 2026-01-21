@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { LogIn } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 const Login = () => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
     const { login } = useAuth();
@@ -14,21 +14,18 @@ const Login = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setError('');
         setLoading(true);
         try {
             const data = await login(username, password);
             if (data.success) {
+                toast.success('Successfully logged in!');
                 navigate('/profile');
             } else {
-                setError(data.error || 'Login failed');
+                toast.error(data.error || 'Login failed');
             }
         } catch (err) {
-            if (err.response && err.response.data && err.response.data.error) {
-                setError(err.response.data.error);
-            } else {
-                setError('An error occurred during login');
-            }
+            const errorMsg = err.response?.data?.error || 'An error occurred during login';
+            toast.error(errorMsg);
         } finally {
             setLoading(false);
         }
@@ -41,8 +38,6 @@ const Login = () => {
                     <h2 className="card-title">Welcome Back</h2>
                     <p className="card-subtitle">Login to your ChainXchange account</p>
                 </div>
-
-                {error && <div className="alert alert-error">{error}</div>}
 
                 <form onSubmit={handleSubmit}>
                     <div className="form-group">
