@@ -339,22 +339,22 @@ const WalletPage = () => {
                                 <table className="table">
                                     <thead>
                                         <tr>
-                                            <th style={{ paddingLeft: '2.5rem' }}>NODE TYPE</th>
-                                            <th>TIMESTAMP</th>
-                                            <th>IDENTIFIER</th>
+                                            <th style={{ paddingLeft: '1.5rem' }}>NODE TYPE</th>
+                                            <th className="mobile-hide">TIMESTAMP</th>
+                                            <th className="mobile-hide">IDENTIFIER</th>
                                             <th style={{ textAlign: 'right' }}>VALUATION</th>
-                                            <th style={{ textAlign: 'right', paddingRight: '2.5rem' }}>STATUS</th>
+                                            <th style={{ textAlign: 'right', paddingRight: '1.5rem' }}>STATUS</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {transactions.map((tx) => (
                                             <tr key={tx._id}>
-                                                <td style={{ paddingLeft: '2.5rem' }}>
+                                                <td style={{ padding: '1rem 0.5rem', paddingLeft: '1.5rem' }}>
                                                     <span style={{
                                                         padding: '0.4rem 0.8rem',
                                                         borderRadius: '8px',
                                                         fontWeight: 800,
-                                                        fontSize: '0.7rem',
+                                                        fontSize: '0.65rem',
                                                         textTransform: 'uppercase',
                                                         backgroundColor: tx.type === 'deposit' ? 'rgba(2, 192, 118, 0.1)' : 'rgba(246, 70, 93, 0.1)',
                                                         color: tx.type === 'deposit' ? '#02c076' : '#f6465d'
@@ -362,16 +362,16 @@ const WalletPage = () => {
                                                         {tx.type}
                                                     </span>
                                                 </td>
-                                                <td style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 500 }}>
+                                                <td className="mobile-hide" style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 500 }}>
                                                     {tx.formattedTimestamp}
                                                 </td>
-                                                <td style={{ fontSize: '0.85rem', fontWeight: 600 }}>•••• {tx.cardNumber ? tx.cardNumber.slice(-4) : 'NULL'}</td>
-                                                <td style={{ textAlign: 'right', fontWeight: 800, fontSize: '1rem' }}>
+                                                <td className="mobile-hide" style={{ fontSize: '0.8rem', fontWeight: 600 }}>•••• {tx.cardNumber ? tx.cardNumber.slice(-4) : 'NULL'}</td>
+                                                <td style={{ textAlign: 'right', fontWeight: 800, fontSize: '0.9rem', padding: '1rem 0.5rem' }}>
                                                     {tx.type === 'deposit' ? '+' : '-'}${tx.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                                 </td>
-                                                <td style={{ textAlign: 'right', paddingRight: '2.5rem' }}>
-                                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '6px', color: 'var(--success-color)', fontSize: '0.8rem', fontWeight: 700 }}>
-                                                        <CheckCircle size={14} /> {tx.status.toUpperCase()}
+                                                <td style={{ textAlign: 'right', paddingRight: '1.5rem' }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px', color: 'var(--success-color)', fontSize: '0.75rem', fontWeight: 700 }}>
+                                                        <CheckCircle className="mobile-hide" size={14} /> {tx.status.toUpperCase()}
                                                     </div>
                                                 </td>
                                             </tr>

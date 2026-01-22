@@ -260,13 +260,13 @@ const Portfolio = () => {
                         <table className="table">
                             <thead>
                                 <tr>
-                                    <th style={{ paddingLeft: '2rem' }}>Asset</th>
-                                    <th className="numeric-cell">Quantity</th>
-                                    <th className="numeric-cell">Avg. Price</th>
-                                    <th className="numeric-cell">Current</th>
+                                    <th style={{ paddingLeft: '1rem' }}>Asset</th>
+                                    <th className="mobile-hide numeric-cell">Quantity</th>
+                                    <th className="mobile-hide numeric-cell">Avg. Price</th>
+                                    <th className="mobile-hide numeric-cell">Current</th>
                                     <th className="numeric-cell">Value</th>
-                                    <th style={{ textAlign: 'center' }}>P&L</th>
-                                    <th style={{ paddingRight: '2rem' }}>Actions</th>
+                                    <th className="mobile-hide" style={{ textAlign: 'center' }}>P&L</th>
+                                    <th style={{ paddingRight: '1rem', textAlign: 'right' }}>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -284,24 +284,24 @@ const Portfolio = () => {
                                                 animate={{ opacity: 1, x: 0 }}
                                                 exit={{ opacity: 0, scale: 0.95 }}
                                             >
-                                                <td style={{ padding: '1.25rem 1.5rem', paddingLeft: '2rem' }}>
+                                                <td style={{ padding: '0.75rem 0.5rem', paddingLeft: '1rem' }}>
                                                     <Link to={`/crypto/${holding.coinId}`} className="crypto-name" style={{ textDecoration: 'none', color: 'inherit' }}>
-                                                        <img src={holding.image} alt={holding.crypto} className="crypto-icon" style={{ width: '40px', height: '40px' }} />
+                                                        <img src={holding.image} alt={holding.crypto} className="crypto-icon" style={{ width: '32px', height: '32px' }} />
                                                         <div>
-                                                            <div style={{ fontWeight: 700, fontSize: '1rem' }}>{holding.crypto}</div>
-                                                            <div className="crypto-symbol" style={{ fontWeight: 500, opacity: 0.8 }}>{holding.symbol?.toUpperCase()}</div>
+                                                            <div style={{ fontWeight: 700, fontSize: '0.85rem' }}>{holding.crypto}</div>
+                                                            <div className="crypto-symbol mobile-hide" style={{ fontWeight: 500, opacity: 0.8, fontSize: '0.7rem' }}>{holding.symbol?.toUpperCase()}</div>
                                                         </div>
                                                     </Link>
                                                 </td>
-                                                <td className="numeric-cell" style={{ fontWeight: 600 }}>{holding.quantity < 1 ? holding.quantity.toFixed(6) : holding.quantity.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                                                <td className="numeric-cell" style={{ fontWeight: 500 }}>${formatPrice(holding.averageBuyPrice)}</td>
-                                                <td className="numeric-cell" style={{ fontWeight: 700 }}>${formatPrice(holding.currentPrice)}</td>
-                                                <td className="numeric-cell" style={{ fontWeight: 700 }}>${formatPrice(totalValue)}</td>
-                                                <td className={`change-cell ${pnlPercent >= 0 ? 'change-positive' : 'change-negative'}`} style={{ fontWeight: 700 }}>
+                                                <td className="mobile-hide numeric-cell" style={{ fontWeight: 600 }}>{holding.quantity < 1 ? holding.quantity.toFixed(4) : holding.quantity.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                                                <td className="mobile-hide numeric-cell" style={{ fontWeight: 500 }}>${formatPrice(holding.averageBuyPrice)}</td>
+                                                <td className="mobile-hide numeric-cell" style={{ fontWeight: 700 }}>${formatPrice(holding.currentPrice)}</td>
+                                                <td className="numeric-cell" style={{ fontWeight: 700, fontSize: '0.85rem' }}>${formatPrice(totalValue)}</td>
+                                                <td className={`mobile-hide change-cell ${pnlPercent >= 0 ? 'change-positive' : 'change-negative'}`} style={{ fontWeight: 700 }}>
                                                     {pnlPercent >= 0 ? '+' : ''}{pnlPercent.toFixed(2)}%
                                                 </td>
-                                                <td style={{ paddingRight: '2rem' }}>
-                                                    <form onSubmit={(e) => handleSell(e, holding.coinId, holding.currentPrice, holding.quantity)} className="action-form" style={{ display: 'flex', gap: '8px' }}>
+                                                <td style={{ padding: '1rem 0.5rem', paddingRight: '1rem', textAlign: 'right' }}>
+                                                    <form onSubmit={(e) => handleSell(e, holding.coinId, holding.currentPrice, holding.quantity)} className="action-form" style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
                                                         <input
                                                             type="number"
                                                             name="quantity"
@@ -309,9 +309,9 @@ const Portfolio = () => {
                                                             max={holding.quantity}
                                                             step="any"
                                                             required
-                                                            placeholder="0.00"
+                                                            placeholder="Qty"
                                                             className="form-control"
-                                                            style={{ width: '80px', height: '32px', padding: '0 8px', borderRadius: '6px', fontSize: '0.875rem' }}
+                                                            style={{ width: '60px', height: '32px', padding: '0 8px', borderRadius: '6px', fontSize: '0.75rem' }}
                                                         />
                                                         <button type="submit" className="btn btn-danger btn-sm" style={{ borderRadius: '6px' }}>Sell</button>
                                                     </form>

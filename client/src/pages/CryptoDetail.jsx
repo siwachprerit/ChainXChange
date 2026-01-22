@@ -262,13 +262,13 @@ const CryptoDetail = () => {
             <div className="crypto-detail-grid" style={{
                 display: 'grid',
                 gridTemplateColumns: 'minmax(0, 1fr) 350px',
-                gap: '2.5rem',
+                gap: '1.5rem',
                 alignItems: 'start'
             }}>
                 {/* Main Content Area */}
                 <div style={{ minWidth: 0 }}>
-                    <motion.div className="card" style={{ padding: '2rem' }} variants={itemVariants}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                    <motion.div className="card" style={{ padding: '1.5rem' }} variants={itemVariants}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem', gap: '1rem', flexWrap: 'wrap' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                 {showSkeleton ? (
                                     <Skeleton width="48px" height="48px" borderRadius="50%" />
@@ -320,7 +320,7 @@ const CryptoDetail = () => {
                         </div>
 
                         {/* Chart Controls */}
-                        <div style={{ display: 'flex', gap: '8px', marginBottom: '2rem', background: 'var(--bg-tertiary)', padding: '4px', borderRadius: '10px', width: 'fit-content' }}>
+                        <div style={{ display: 'flex', gap: '6px', marginBottom: '2rem', background: 'var(--bg-tertiary)', padding: '4px', borderRadius: '10px', width: 'fit-content', flexWrap: 'wrap' }}>
                             {['1h', '24h', '7d', '1m', '1y'].map(tf => (
                                 <button
                                     key={tf}
@@ -340,7 +340,7 @@ const CryptoDetail = () => {
                             ))}
                         </div>
 
-                        <div style={{ height: '480px', width: '100%' }}>
+                        <div style={{ height: '400px', width: '100%' }} className="chart-container-wrapper">
                             {showSkeleton ? (
                                 <Skeleton width="100%" height="100%" />
                             ) : (

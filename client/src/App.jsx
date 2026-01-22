@@ -21,6 +21,17 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
+// Component to handle scrolling to top on navigation
+const ScrollToTop = () => {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+
+  return null;
+};
+
 // Component to handle dynamic page titles
 const PageTitleUpdater = () => {
   const location = useLocation();
@@ -38,8 +49,6 @@ const PageTitleUpdater = () => {
     else if (path === '/history') title = 'Trade History';
     // else if (path === '/about') title = 'About ChainXchange';
     else if (path.startsWith('/crypto/')) {
-      // We set a generic title here, letting the page component set a specific one
-      // or we can try to leave it if we want the component to take over completely.
       title = 'Crypto Detail';
     }
 
@@ -55,6 +64,7 @@ const AppContent = () => {
       <Toaster position="top-right" reverseOrder={false} />
       <div className="ambient-light" style={{ top: '-10%', left: '-10%' }}></div>
       <div className="ambient-light" style={{ bottom: '10%', right: '-10%', background: 'radial-gradient(circle, var(--success-color) 0%, transparent 70%)', opacity: 0.03 }}></div>
+      <ScrollToTop />
       <PageTitleUpdater />
       <Navbar />
       <main className="container">

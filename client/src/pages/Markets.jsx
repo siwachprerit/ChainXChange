@@ -336,14 +336,14 @@ const Markets = () => {
                 <table className="table">
                     <thead>
                         <tr>
-                            <th>#</th>
+                            <th className="mobile-hide">#</th>
                             <th style={{ width: '40px' }}></th>
                             <th>Name</th>
                             <th className="numeric-cell">Price</th>
-                            <th style={{ textAlign: 'center' }}>24h Change</th>
-                            <th className="numeric-cell">Market Cap</th>
-                            <th className="numeric-cell">Volume</th>
-                            <th>Action</th>
+                            <th className="mobile-hide" style={{ textAlign: 'center' }}>24h Change</th>
+                            <th className="mobile-hide numeric-cell">Market Cap</th>
+                            <th className="mobile-hide numeric-cell">Volume</th>
+                            <th style={{ textAlign: 'right' }}>Action</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -351,7 +351,7 @@ const Markets = () => {
                             {isLoading ? (
                                 Array(10).fill(0).map((_, i) => (
                                     <tr key={`skeleton-${i}`}>
-                                        <td><Skeleton width="20px" /></td>
+                                        <td className="mobile-hide"><Skeleton width="20px" /></td>
                                         <td><Skeleton width="20px" /></td>
                                         <td>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -363,10 +363,10 @@ const Markets = () => {
                                             </div>
                                         </td>
                                         <td><Skeleton width="60px" className="numeric-cell" /></td>
-                                        <td><Skeleton width="50px" style={{ margin: '0 auto' }} /></td>
-                                        <td><Skeleton width="100px" className="numeric-cell" /></td>
-                                        <td><Skeleton width="100px" className="numeric-cell" /></td>
-                                        <td><Skeleton width="60px" height="30px" borderRadius="8px" /></td>
+                                        <td className="mobile-hide"><Skeleton width="50px" style={{ margin: '0 auto' }} /></td>
+                                        <td className="mobile-hide"><Skeleton width="100px" className="numeric-cell" /></td>
+                                        <td className="mobile-hide"><Skeleton width="100px" className="numeric-cell" /></td>
+                                        <td style={{ textAlign: 'right' }}><Skeleton width="60px" height="30px" borderRadius="8px" /></td>
                                     </tr>
                                 ))
                             ) : (
@@ -379,7 +379,7 @@ const Markets = () => {
                                         exit={{ opacity: 0, scale: 0.95 }}
                                         transition={{ duration: 0.2 }}
                                     >
-                                        <td>{index + 1}</td>
+                                        <td className="mobile-hide">{index + 1}</td>
                                         <td>
                                             <motion.button
                                                 whileHover={{ scale: 1.2 }}
@@ -390,23 +390,23 @@ const Markets = () => {
                                                 <Star size={18} fill={activeWatchlist.coins.includes(coin.id) ? '#f3ba2f' : 'none'} />
                                             </motion.button>
                                         </td>
-                                        <td style={{ padding: '1.25rem 1.5rem' }}>
+                                        <td style={{ padding: '1rem 0.5rem' }}>
                                             <Link to={`/crypto/${coin.id}`} className="crypto-name" style={{ textDecoration: 'none', color: 'inherit' }}>
-                                                <img src={coin.image} alt={coin.name} className="crypto-icon" style={{ width: '40px', height: '40px' }} />
-                                                <div>
-                                                    <div style={{ fontWeight: 700, fontSize: '1rem' }}>{coin.name}</div>
-                                                    <div className="crypto-symbol" style={{ fontWeight: 500, opacity: 0.8 }}>{coin.symbol?.toUpperCase()}</div>
+                                                <img src={coin.image} alt={coin.name} className="crypto-icon" style={{ width: '32px', height: '32px' }} />
+                                                <div style={{ minWidth: 0, flex: 1 }}>
+                                                    <div style={{ fontWeight: 700, fontSize: '0.9rem', lineHeight: 1.2, wordBreak: 'break-word', whiteSpace: 'normal' }}>{coin.name}</div>
+                                                    <div className="crypto-symbol" style={{ fontWeight: 500, opacity: 0.8, fontSize: '0.75rem' }}>{coin.symbol?.toUpperCase()}</div>
                                                 </div>
                                             </Link>
                                         </td>
-                                        <td className="price-cell" style={{ fontWeight: 700, fontSize: '1rem' }}>${formatPrice(coin.current_price)}</td>
-                                        <td className={`change-cell ${coin.price_change_percentage_24h >= 0 ? 'change-positive' : 'change-negative'}`} style={{ fontWeight: 700 }}>
+                                        <td className="price-cell" style={{ fontWeight: 700, fontSize: '0.9rem' }}>${formatPrice(coin.current_price)}</td>
+                                        <td className={`mobile-hide change-cell ${coin.price_change_percentage_24h >= 0 ? 'change-positive' : 'change-negative'}`} style={{ fontWeight: 700 }}>
                                             {coin.price_change_percentage_24h >= 0 ? '+' : ''}{coin.price_change_percentage_24h?.toFixed(2)}%
                                         </td>
-                                        <td className="numeric-cell" style={{ fontWeight: 500 }}>${formatNumber(coin.market_cap)}</td>
-                                        <td className="numeric-cell" style={{ fontWeight: 500 }}>${formatNumber(coin.total_volume)}</td>
+                                        <td className="mobile-hide numeric-cell" style={{ fontWeight: 500 }}>${formatNumber(coin.market_cap)}</td>
+                                        <td className="mobile-hide numeric-cell" style={{ fontWeight: 500 }}>${formatNumber(coin.total_volume)}</td>
                                         <td style={{ textAlign: 'right' }}>
-                                            <Link to={`/crypto/${coin.id}`} className="btn btn-primary btn-sm" style={{ borderRadius: '10px', padding: '0.6rem 1.25rem', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                            <Link to={`/crypto/${coin.id}`} className="btn btn-primary btn-sm" style={{ borderRadius: '10px', padding: '0.5rem 0.75rem', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                                                 Trade <ChevronRight size={14} />
                                             </Link>
                                         </td>

@@ -190,26 +190,26 @@ const Profile = () => {
                                 <table className="table">
                                     <thead>
                                         <tr>
-                                            <th style={{ paddingLeft: '2rem' }}>Date</th>
-                                            <th>Type</th>
+                                            <th className="mobile-hide" style={{ paddingLeft: '1.5rem' }}>Date</th>
+                                            <th style={{ paddingLeft: '1.5rem' }}>Type</th>
                                             <th>Asset</th>
-                                            <th className="numeric-cell">Price</th>
-                                            <th className="numeric-cell">Quantity</th>
-                                            <th className="numeric-cell" style={{ paddingRight: '2rem' }}>Total</th>
+                                            <th className="mobile-hide numeric-cell">Price</th>
+                                            <th className="mobile-hide numeric-cell">Quantity</th>
+                                            <th className="numeric-cell" style={{ paddingRight: '1.5rem' }}>Total</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {transactions.map((tx) => (
                                             <tr key={tx._id}>
-                                                <td style={{ padding: '1.25rem 1.5rem', paddingLeft: '2rem', fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 500 }}>
+                                                <td className="mobile-hide" style={{ padding: '1rem 1.5rem', paddingLeft: '1.5rem', fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 500 }}>
                                                     {tx.formattedTimestamp}
                                                 </td>
-                                                <td style={{ padding: '1.25rem 1.5rem' }}>
+                                                <td style={{ padding: '1rem 1.5rem', paddingLeft: '1.5rem' }}>
                                                     <span style={{
-                                                        padding: '0.4rem 0.8rem',
-                                                        borderRadius: '8px',
+                                                        padding: '0.3rem 0.6rem',
+                                                        borderRadius: '6px',
                                                         fontWeight: 800,
-                                                        fontSize: '0.75rem',
+                                                        fontSize: '0.65rem',
                                                         textTransform: 'uppercase',
                                                         backgroundColor: tx.type === 'buy' ? 'rgba(2, 192, 118, 0.1)' : 'rgba(246, 70, 93, 0.1)',
                                                         color: tx.type === 'buy' ? '#02c076' : '#f6465d',
@@ -218,10 +218,10 @@ const Profile = () => {
                                                         {tx.type}
                                                     </span>
                                                 </td>
-                                                <td style={{ padding: '1.25rem 1.5rem', fontWeight: 700, color: 'var(--text-primary)' }}>{tx.coinName}</td>
-                                                <td className="numeric-cell" style={{ padding: '1.25rem 1.5rem', fontWeight: 600 }}>${formatPrice(tx.price)}</td>
-                                                <td className="numeric-cell" style={{ padding: '1.25rem 1.5rem', fontWeight: 600 }}>{tx.quantity}</td>
-                                                <td className="numeric-cell" style={{ padding: '1.25rem 1.5rem', paddingRight: '2rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                                                <td style={{ padding: '1rem 1.5rem', fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.85rem' }}>{tx.coinName}</td>
+                                                <td className="mobile-hide numeric-cell" style={{ padding: '1rem 1.5rem', fontWeight: 600 }}>${formatPrice(tx.price)}</td>
+                                                <td className="mobile-hide numeric-cell" style={{ padding: '1rem 1.5rem', fontWeight: 600 }}>{tx.quantity}</td>
+                                                <td className="numeric-cell" style={{ padding: '1rem 1.5rem', paddingRight: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', fontSize: '0.85rem' }}>
                                                     ${formatPrice(tx.totalValue)}
                                                 </td>
                                             </tr>
@@ -245,12 +245,12 @@ const Profile = () => {
                 </motion.div>
             </div>
 
-            <motion.div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginTop: '3rem' }} variants={itemVariants}>
-                <Link to="/portfolio" className="btn btn-secondary btn-lg" style={{ borderRadius: '14px', padding: '0 2rem', height: '54px' }}>
+            <motion.div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginTop: '3rem', flexWrap: 'wrap' }} variants={itemVariants}>
+                <Link to="/portfolio" className="btn btn-secondary btn-lg" style={{ borderRadius: '14px', padding: '0 1.5rem', height: '54px', flex: 1, minWidth: '160px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     View Performance
                 </Link>
-                <Link to="/" className="btn btn-secondary btn-lg" style={{ borderRadius: '14px', padding: '0 2rem', height: '54px' }}>
-                    <ArrowLeft size={18} style={{ marginRight: '8px' }} /> Back to Markets
+                <Link to="/" className="btn btn-secondary btn-lg" style={{ borderRadius: '14px', padding: '0 1.5rem', height: '54px', flex: 1, minWidth: '160px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <ArrowLeft size={18} style={{ marginRight: '8px' }} /> Markets
                 </Link>
             </motion.div>
         </motion.div>
