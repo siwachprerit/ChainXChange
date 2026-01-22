@@ -151,8 +151,8 @@ const Portfolio = () => {
 
             <div className="portfolio-content-grid" style={{
                 display: 'grid',
-                gridTemplateColumns: data.holdings.length > 0 ? '1fr 380px' : '1fr',
-                gap: '2.5rem',
+                gridTemplateColumns: data.holdings.length > 0 ? '1fr 300px' : '1fr',
+                gap: '2rem',
                 marginBottom: '2rem'
             }}>
                 <div className="card" style={{ padding: '1.5rem 0' }}>
@@ -224,12 +224,11 @@ const Portfolio = () => {
                 </div>
 
                 {data.holdings.length > 0 && (
-                    <div className="card" style={{ padding: '2rem' }}>
-                        <div className="card-header" style={{ border: 'none', padding: '0 0 2rem' }}>
-                            <div className="card-title">Asset Allocation</div>
-                            <div className="card-subtitle">Distribution of your portfolio</div>
+                    <div className="card" style={{ padding: '1.5rem', minWidth: 0, overflow: 'hidden' }}>
+                        <div className="card-header" style={{ border: 'none', padding: '0 0 1rem' }}>
+                            <div className="card-title" style={{ fontSize: '1.15rem' }}>Asset Allocation</div>
                         </div>
-                        <div style={{ height: '350px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                        <div style={{ height: '320px', width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', position: 'relative' }}>
                             <Doughnut
                                 data={{
                                     labels: data.holdings.map(h => h.crypto),
@@ -240,7 +239,7 @@ const Portfolio = () => {
                                             '#e84142', '#345d9d', '#9b59b6', '#3498db', '#e67e22'
                                         ],
                                         borderWidth: 0,
-                                        cutout: '75%'
+                                        cutout: '82%'
                                     }]
                                 }}
                                 options={{
@@ -251,12 +250,13 @@ const Portfolio = () => {
                                             labels: {
                                                 color: theme === 'dark' ? '#eaecef' : '#4a5568',
                                                 usePointStyle: true,
-                                                padding: 24,
-                                                font: { size: 12, weight: 600 }
+                                                padding: 20,
+                                                font: { size: 14, weight: 700 }
                                             }
                                         }
                                     },
-                                    maintainAspectRatio: false
+                                    maintainAspectRatio: false,
+                                    responsive: true
                                 }}
                             />
                         </div>

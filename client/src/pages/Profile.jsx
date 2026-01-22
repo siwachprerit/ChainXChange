@@ -69,9 +69,9 @@ const Profile = () => {
                 <p className="page-subtitle">Personalize your account and review your trade activity</p>
             </div>
 
-            <div style={{
+            <div className="profile-grid" style={{
                 display: 'grid',
-                gridTemplateColumns: 'minmax(350px, 1fr) 2fr',
+                gridTemplateColumns: 'minmax(0, 1fr) 2fr',
                 gap: '2.5rem',
                 alignItems: 'start'
             }}>

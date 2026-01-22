@@ -113,7 +113,11 @@ const WalletPage = () => {
                 <p className="page-subtitle">Securely deposit and withdraw funds</p>
             </div>
 
-            <div className="dashboard-grid" style={{ gridTemplateColumns: '1fr 1.5fr', gap: '2rem' }}>
+            <div className="wallet-grid" style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1.5fr',
+                gap: '2rem'
+            }}>
 
                 {/* Transaction Form Card */}
                 <div>

@@ -229,9 +229,9 @@ const CryptoDetail = () => {
                 </Link>
             </div>
 
-            <div style={{
+            <div className="crypto-detail-grid" style={{
                 display: 'grid',
-                gridTemplateColumns: 'minmax(0, 1fr) 380px',
+                gridTemplateColumns: 'minmax(0, 1fr) 350px',
                 gap: '2.5rem',
                 alignItems: 'start'
             }}>
