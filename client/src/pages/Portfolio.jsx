@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { TrendingUp, TrendingDown, DollarSign, Wallet, PieChart, ShoppingCart, ArrowLeft, Bell } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, Wallet, PieChart, ShoppingCart, ArrowLeft, Bell, ArrowRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNotifications } from '../context/NotificationContext';
 import { Chart as ChartJS, ArcElement, Tooltip as ChartTooltip, Legend as ChartLegend } from 'chart.js';
 import { Doughnut } from 'react-chartjs-2';
+import { motion, AnimatePresence } from 'framer-motion';
 
 ChartJS.register(ArcElement, ChartTooltip, ChartLegend);
 
@@ -112,41 +113,135 @@ const Portfolio = () => {
         );
     }
 
+    const containerVariants = {
+        hidden: { opacity: 0 },
+        visible: {
+            opacity: 1,
+            transition: {
+                staggerChildren: 0.1
+            }
+        }
+    };
+
+    const itemVariants = {
+        hidden: { opacity: 0, y: 20 },
+        visible: {
+            opacity: 1,
+            y: 0,
+            transition: {
+                type: 'spring',
+                stiffness: 100,
+                damping: 15
+            }
+        }
+    };
+
     return (
-        <div className="container">
-            <div className="page-header">
-                <h1 className="page-title">Your Portfolio</h1>
-                <p className="page-subtitle">Track your cryptocurrency investments</p>
-            </div>
+        <motion.div
+            className="container"
+            initial="hidden"
+            animate="visible"
+            variants={containerVariants}
+            style={{ position: 'relative' }}
+        >
+            <motion.div variants={itemVariants} style={{ marginBottom: '4rem' }}>
+                <h1 style={{
+                    fontSize: 'clamp(2.5rem, 6vw, 4.5rem)',
+                    fontWeight: 900,
+                    letterSpacing: '-0.05em',
+                    lineHeight: 1,
+                    marginBottom: '1rem'
+                }}>
+                    Portfolio <br />
+                    <span className="text-gradient" style={{ animation: 'shine 3s linear infinite', display: 'inline-block' }}>Intelligence</span>
+                </h1>
+                <p style={{ fontSize: '1.25rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
+                    Real-time valuation and performance analytics for your digital assets.
+                </p>
+            </motion.div>
 
             <div style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                gridTemplateColumns: 'repeat(12, 1fr)',
                 gap: '1.5rem',
-                marginBottom: '2.5rem'
+                marginBottom: '4rem'
             }}>
-                <div className="card" style={{ padding: '1.75rem', borderLeft: '4px solid var(--accent-primary)' }}>
-                    <div className="stat-label" style={{ fontWeight: 600 }}>Total Portfolio Value</div>
-                    <div className="stat-value" style={{ fontSize: '1.75rem', marginTop: '0.5rem' }}>${formatPrice(data.portfolioValue)}</div>
-                    <div className={`stat-change ${data.totalProfitLoss >= 0 ? 'positive' : 'negative'}`} style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '0.5rem' }}>
-                        {data.totalProfitLoss >= 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
+                {/* Total Value Bento */}
+                <motion.div
+                    variants={itemVariants}
+                    className="card"
+                    style={{
+                        gridColumn: 'span 5',
+                        padding: '3rem 2.5rem',
+                        background: 'rgba(255, 255, 255, 0.02)',
+                        border: '1px solid rgba(255, 255, 255, 0.05)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'center'
+                    }}
+                >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1.5rem' }}>
+                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent-primary)' }}></div>
+                        <div style={{ fontWeight: 800, fontSize: '0.75rem', letterSpacing: '0.1em', opacity: 0.6 }}>NET WORTH</div>
+                    </div>
+                    <div style={{ fontSize: '4rem', fontWeight: 900, letterSpacing: '-0.05em', lineHeight: 1 }}>
+                        ${formatPrice(data.portfolioValue)}
+                    </div>
+                    <div className={`stat-change ${data.totalProfitLoss >= 0 ? 'positive' : 'negative'}`} style={{
+                        marginTop: '1.5rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        fontSize: '1.25rem',
+                        fontWeight: 800
+                    }}>
+                        {data.totalProfitLoss >= 0 ? <TrendingUp size={24} /> : <TrendingDown size={24} />}
                         {data.totalProfitLoss >= 0 ? '+' : ''}{formatPrice(data.totalProfitLossPercentage)}%
                     </div>
-                </div>
+                </motion.div>
 
-                <div className="card" style={{ padding: '1.75rem', borderLeft: '4px solid var(--success-color)' }}>
-                    <div className="stat-label" style={{ fontWeight: 600 }}>Total Net Profit</div>
-                    <div className={`stat-value ${data.totalProfitLoss >= 0 ? 'text-success' : 'text-danger'}`} style={{ fontSize: '1.75rem', marginTop: '0.5rem', color: data.totalProfitLoss >= 0 ? 'var(--success-color)' : 'var(--danger-color)' }}>
+                {/* Profit Bento */}
+                <motion.div
+                    variants={itemVariants}
+                    className="card"
+                    style={{
+                        gridColumn: 'span 4',
+                        padding: '2rem',
+                        background: data.totalProfitLoss >= 0 ? 'rgba(2, 192, 118, 0.05)' : 'rgba(246, 70, 93, 0.05)',
+                        border: '1px solid rgba(255, 255, 255, 0.03)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'center',
+                        textAlign: 'center'
+                    }}
+                >
+                    <div style={{ fontWeight: 800, fontSize: '0.75rem', letterSpacing: '0.1em', opacity: 0.6, marginBottom: '0.5rem' }}>TOTAL EARNINGS</div>
+                    <div style={{
+                        fontSize: '2.5rem',
+                        fontWeight: 900,
+                        color: data.totalProfitLoss >= 0 ? 'var(--success-color)' : 'var(--danger-color)'
+                    }}>
                         {data.totalProfitLoss >= 0 ? '+' : '-'}${formatPrice(Math.abs(data.totalProfitLoss))}
                     </div>
-                    <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>Lifetime earnings</div>
-                </div>
+                </motion.div>
 
-                <div className="card" style={{ padding: '1.75rem', borderLeft: '4px solid #627eea' }}>
-                    <div className="stat-label" style={{ fontWeight: 600 }}>Active Assets</div>
-                    <div className="stat-value" style={{ fontSize: '1.75rem', marginTop: '0.5rem' }}>{data.holdings.length}</div>
-                    <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>Diversified across coins</div>
-                </div>
+                {/* Active Assets Bento */}
+                <motion.div
+                    variants={itemVariants}
+                    className="card"
+                    style={{
+                        gridColumn: 'span 3',
+                        padding: '2rem',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'center',
+                        textAlign: 'center'
+                    }}
+                >
+                    <div style={{ fontWeight: 800, fontSize: '0.75rem', letterSpacing: '0.1em', opacity: 0.6, marginBottom: '0.5rem' }}>DIVERSIFICATION</div>
+                    <div style={{ fontSize: '3rem', fontWeight: 900 }}>{data.holdings.length}</div>
+                    <div style={{ fontSize: '0.8rem', opacity: 0.5 }}>ACTIVE ASSETS</div>
+                </motion.div>
             </div>
 
             <div className="portfolio-content-grid" style={{
@@ -155,7 +250,7 @@ const Portfolio = () => {
                 gap: '2rem',
                 marginBottom: '2rem'
             }}>
-                <div className="card" style={{ padding: '1.5rem 0' }}>
+                <motion.div className="card" style={{ padding: '1.5rem 0' }} variants={itemVariants}>
                     <div className="card-header" style={{ border: 'none', padding: '0 2rem 1.5rem' }}>
                         <div className="card-title">Your Holdings</div>
                         <div className="card-subtitle">Current positions in your portfolio</div>
@@ -175,56 +270,63 @@ const Portfolio = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {data.holdings.map((holding) => {
-                                    const totalValue = holding.quantity * holding.currentPrice;
-                                    const pnlPercent = holding.averageBuyPrice > 0
-                                        ? ((holding.currentPrice - holding.averageBuyPrice) / holding.averageBuyPrice) * 100
-                                        : 0;
+                                <AnimatePresence mode="popLayout">
+                                    {data.holdings.map((holding) => {
+                                        const totalValue = holding.quantity * holding.currentPrice;
+                                        const pnlPercent = holding.averageBuyPrice > 0
+                                            ? ((holding.currentPrice - holding.averageBuyPrice) / holding.averageBuyPrice) * 100
+                                            : 0;
 
-                                    return (
-                                        <tr key={holding.coinId}>
-                                            <td style={{ padding: '1.25rem 1.5rem', paddingLeft: '2rem' }}>
-                                                <Link to={`/crypto/${holding.coinId}`} className="crypto-name" style={{ textDecoration: 'none', color: 'inherit' }}>
-                                                    <img src={holding.image} alt={holding.crypto} className="crypto-icon" style={{ width: '40px', height: '40px' }} />
-                                                    <div>
-                                                        <div style={{ fontWeight: 700, fontSize: '1rem' }}>{holding.crypto}</div>
-                                                        <div className="crypto-symbol" style={{ fontWeight: 500, opacity: 0.8 }}>{holding.symbol?.toUpperCase()}</div>
-                                                    </div>
-                                                </Link>
-                                            </td>
-                                            <td className="numeric-cell" style={{ fontWeight: 600 }}>{holding.quantity < 1 ? holding.quantity.toFixed(6) : holding.quantity.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                                            <td className="numeric-cell" style={{ fontWeight: 500 }}>${formatPrice(holding.averageBuyPrice)}</td>
-                                            <td className="numeric-cell" style={{ fontWeight: 700 }}>${formatPrice(holding.currentPrice)}</td>
-                                            <td className="numeric-cell" style={{ fontWeight: 700 }}>${formatPrice(totalValue)}</td>
-                                            <td className={`change-cell ${pnlPercent >= 0 ? 'change-positive' : 'change-negative'}`} style={{ fontWeight: 700 }}>
-                                                {pnlPercent >= 0 ? '+' : ''}{pnlPercent.toFixed(2)}%
-                                            </td>
-                                            <td style={{ paddingRight: '2rem' }}>
-                                                <form onSubmit={(e) => handleSell(e, holding.coinId, holding.currentPrice, holding.quantity)} className="action-form" style={{ display: 'flex', gap: '8px' }}>
-                                                    <input
-                                                        type="number"
-                                                        name="quantity"
-                                                        min="0.000001"
-                                                        max={holding.quantity}
-                                                        step="any"
-                                                        required
-                                                        placeholder="0.00"
-                                                        className="form-control"
-                                                        style={{ width: '80px', height: '32px', padding: '0 8px', borderRadius: '6px', fontSize: '0.875rem' }}
-                                                    />
-                                                    <button type="submit" className="btn btn-danger btn-sm" style={{ borderRadius: '6px' }}>Sell</button>
-                                                </form>
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
+                                        return (
+                                            <motion.tr
+                                                key={holding.coinId}
+                                                initial={{ opacity: 0, x: -20 }}
+                                                animate={{ opacity: 1, x: 0 }}
+                                                exit={{ opacity: 0, scale: 0.95 }}
+                                            >
+                                                <td style={{ padding: '1.25rem 1.5rem', paddingLeft: '2rem' }}>
+                                                    <Link to={`/crypto/${holding.coinId}`} className="crypto-name" style={{ textDecoration: 'none', color: 'inherit' }}>
+                                                        <img src={holding.image} alt={holding.crypto} className="crypto-icon" style={{ width: '40px', height: '40px' }} />
+                                                        <div>
+                                                            <div style={{ fontWeight: 700, fontSize: '1rem' }}>{holding.crypto}</div>
+                                                            <div className="crypto-symbol" style={{ fontWeight: 500, opacity: 0.8 }}>{holding.symbol?.toUpperCase()}</div>
+                                                        </div>
+                                                    </Link>
+                                                </td>
+                                                <td className="numeric-cell" style={{ fontWeight: 600 }}>{holding.quantity < 1 ? holding.quantity.toFixed(6) : holding.quantity.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                                                <td className="numeric-cell" style={{ fontWeight: 500 }}>${formatPrice(holding.averageBuyPrice)}</td>
+                                                <td className="numeric-cell" style={{ fontWeight: 700 }}>${formatPrice(holding.currentPrice)}</td>
+                                                <td className="numeric-cell" style={{ fontWeight: 700 }}>${formatPrice(totalValue)}</td>
+                                                <td className={`change-cell ${pnlPercent >= 0 ? 'change-positive' : 'change-negative'}`} style={{ fontWeight: 700 }}>
+                                                    {pnlPercent >= 0 ? '+' : ''}{pnlPercent.toFixed(2)}%
+                                                </td>
+                                                <td style={{ paddingRight: '2rem' }}>
+                                                    <form onSubmit={(e) => handleSell(e, holding.coinId, holding.currentPrice, holding.quantity)} className="action-form" style={{ display: 'flex', gap: '8px' }}>
+                                                        <input
+                                                            type="number"
+                                                            name="quantity"
+                                                            min="0.000001"
+                                                            max={holding.quantity}
+                                                            step="any"
+                                                            required
+                                                            placeholder="0.00"
+                                                            className="form-control"
+                                                            style={{ width: '80px', height: '32px', padding: '0 8px', borderRadius: '6px', fontSize: '0.875rem' }}
+                                                        />
+                                                        <button type="submit" className="btn btn-danger btn-sm" style={{ borderRadius: '6px' }}>Sell</button>
+                                                    </form>
+                                                </td>
+                                            </motion.tr>
+                                        );
+                                    })}
+                                </AnimatePresence>
                             </tbody>
                         </table>
                     </div>
-                </div>
+                </motion.div>
 
                 {data.holdings.length > 0 && (
-                    <div className="card" style={{ padding: '1.5rem', minWidth: 0, overflow: 'hidden' }}>
+                    <motion.div className="card" style={{ padding: '1.5rem', minWidth: 0, overflow: 'hidden' }} variants={itemVariants}>
                         <div className="card-header" style={{ border: 'none', padding: '0 0 1rem' }}>
                             <div className="card-title" style={{ fontSize: '1.15rem' }}>Asset Allocation</div>
                         </div>
@@ -260,16 +362,16 @@ const Portfolio = () => {
                                 }}
                             />
                         </div>
-                    </div>
+                    </motion.div>
                 )}
             </div>
 
-            <div style={{ marginTop: '2rem', textAlign: 'center' }}>
-                <Link to="/" className="btn btn-secondary" style={{ borderRadius: '12px', padding: '0.75rem 1.5rem' }}>
-                    <ArrowLeft size={16} style={{ marginRight: '6px' }} /> Markets
+            <motion.div style={{ marginTop: '2rem', textAlign: 'center' }} variants={itemVariants}>
+                <Link to="/" className="btn btn-secondary" style={{ borderRadius: '12px', padding: '0.75rem 1.5rem', display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                    <ArrowLeft size={16} /> Back to Markets
                 </Link>
-            </div>
-        </div>
+            </motion.div>
+        </motion.div>
     );
 };
 

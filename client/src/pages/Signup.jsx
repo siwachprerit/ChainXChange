@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { UserPlus, User, Mail, Lock, ArrowLeft, LogIn } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { motion } from 'framer-motion';
 
 const Signup = () => {
     const [username, setUsername] = useState('');
@@ -32,7 +33,13 @@ const Signup = () => {
     };
 
     return (
-        <div className="container" style={{ maxWidth: '450px', marginTop: '4rem' }}>
+        <motion.div
+            className="container"
+            style={{ maxWidth: '450px', marginTop: '4rem' }}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.4 }}
+        >
             <div className="page-header" style={{ textAlign: 'center', marginBottom: '2rem' }}>
                 <h1 className="page-title" style={{ fontSize: '2rem' }}>Join ChainXchange</h1>
                 <p className="page-subtitle" style={{ margin: '0.5rem auto' }}>Create your account to start trading</p>
@@ -48,7 +55,12 @@ const Signup = () => {
                 </div>
 
                 <form onSubmit={handleSubmit}>
-                    <div className="form-group">
+                    <motion.div
+                        className="form-group"
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.1 }}
+                    >
                         <label className="form-label">
                             <User size={16} style={{ marginRight: '6px', verticalAlign: 'text-bottom' }} /> Username
                         </label>
@@ -60,9 +72,14 @@ const Signup = () => {
                             onChange={(e) => setUsername(e.target.value)}
                             required
                         />
-                    </div>
+                    </motion.div>
 
-                    <div className="form-group">
+                    <motion.div
+                        className="form-group"
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.2 }}
+                    >
                         <label className="form-label">
                             <Mail size={16} style={{ marginRight: '6px', verticalAlign: 'text-bottom' }} /> Email Address
                         </label>
@@ -74,9 +91,14 @@ const Signup = () => {
                             onChange={(e) => setEmail(e.target.value)}
                             required
                         />
-                    </div>
+                    </motion.div>
 
-                    <div className="form-group">
+                    <motion.div
+                        className="form-group"
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.3 }}
+                    >
                         <label className="form-label">
                             <Lock size={16} style={{ marginRight: '6px', verticalAlign: 'text-bottom' }} /> Password
                         </label>
@@ -89,11 +111,18 @@ const Signup = () => {
                             required
                             minLength={6}
                         />
-                    </div>
+                    </motion.div>
 
-                    <button type="submit" className="btn btn-primary" style={{ width: '100%' }} disabled={loading}>
+                    <motion.button
+                        whileHover={{ scale: 1.01 }}
+                        whileTap={{ scale: 0.99 }}
+                        type="submit"
+                        className="btn btn-primary"
+                        style={{ width: '100%', height: '48px', marginTop: '1rem' }}
+                        disabled={loading}
+                    >
                         {loading ? 'Creating Account...' : <><UserPlus size={18} style={{ marginRight: '8px' }} /> Create Account</>}
-                    </button>
+                    </motion.button>
                 </form>
 
                 <div style={{ textAlign: 'center', marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid var(--border-color)' }}>
@@ -105,11 +134,11 @@ const Signup = () => {
             </div>
 
             <div style={{ textAlign: 'center', marginTop: '2rem' }}>
-                <Link to="/" className="btn btn-secondary">
+                <Link to="/" className="btn btn-secondary" style={{ borderRadius: '12px' }}>
                     <ArrowLeft size={16} style={{ marginRight: '6px' }} /> Back to Markets
                 </Link>
             </div>
-        </div>
+        </motion.div>
     );
 };
 

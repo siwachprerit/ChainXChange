@@ -11,6 +11,7 @@ import Profile from './pages/Profile';
 import CryptoDetail from './pages/CryptoDetail';
 import WalletPage from './pages/WalletPage';
 import TransactionHistory from './pages/TransactionHistory';
+import About from './pages/About';
 import { Toaster } from 'react-hot-toast';
 
 const ProtectedRoute = ({ children }) => {
@@ -35,6 +36,7 @@ const PageTitleUpdater = () => {
     else if (path === '/profile') title = 'Profile';
     else if (path === '/wallet') title = 'Wallet';
     else if (path === '/history') title = 'Trade History';
+    // else if (path === '/about') title = 'About ChainXchange';
     else if (path.startsWith('/crypto/')) {
       // We set a generic title here, letting the page component set a specific one
       // or we can try to leave it if we want the component to take over completely.
@@ -51,6 +53,8 @@ const AppContent = () => {
   return (
     <Router>
       <Toaster position="top-right" reverseOrder={false} />
+      <div className="ambient-light" style={{ top: '-10%', left: '-10%' }}></div>
+      <div className="ambient-light" style={{ bottom: '10%', right: '-10%', background: 'radial-gradient(circle, var(--success-color) 0%, transparent 70%)', opacity: 0.03 }}></div>
       <PageTitleUpdater />
       <Navbar />
       <main className="container">
@@ -58,6 +62,7 @@ const AppContent = () => {
           <Route path="/" element={<Markets />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
+          {/* <Route path="/about" element={<About />} /> */}
           <Route path="/crypto/:coinId" element={<CryptoDetail />} />
           <Route
             path="/portfolio"

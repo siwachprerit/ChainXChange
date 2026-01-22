@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { LogIn } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { motion } from 'framer-motion';
 
 const Login = () => {
     const [username, setUsername] = useState('');
@@ -32,7 +33,13 @@ const Login = () => {
     };
 
     return (
-        <div className="container" style={{ maxWidth: '450px', marginTop: '4rem' }}>
+        <motion.div
+            className="container"
+            style={{ maxWidth: '450px', marginTop: '4rem' }}
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, type: 'spring' }}
+        >
             <div className="card">
                 <div className="card-header" style={{ textAlign: 'center' }}>
                     <h2 className="card-title">Welcome Back</h2>
@@ -40,7 +47,12 @@ const Login = () => {
                 </div>
 
                 <form onSubmit={handleSubmit}>
-                    <div className="form-group">
+                    <motion.div
+                        className="form-group"
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.1 }}
+                    >
                         <label className="form-label">Username</label>
                         <input
                             type="text"
@@ -50,9 +62,14 @@ const Login = () => {
                             onChange={(e) => setUsername(e.target.value)}
                             required
                         />
-                    </div>
+                    </motion.div>
 
-                    <div className="form-group">
+                    <motion.div
+                        className="form-group"
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.2 }}
+                    >
                         <label className="form-label">Password</label>
                         <input
                             type="password"
@@ -62,11 +79,18 @@ const Login = () => {
                             onChange={(e) => setPassword(e.target.value)}
                             required
                         />
-                    </div>
+                    </motion.div>
 
-                    <button type="submit" className="btn btn-primary" style={{ width: '100%' }} disabled={loading}>
+                    <motion.button
+                        whileHover={{ scale: 1.01 }}
+                        whileTap={{ scale: 0.99 }}
+                        type="submit"
+                        className="btn btn-primary"
+                        style={{ width: '100%', height: '48px', marginTop: '1rem' }}
+                        disabled={loading}
+                    >
                         {loading ? 'Logging in...' : <><LogIn size={18} style={{ marginRight: '8px' }} /> Login</>}
-                    </button>
+                    </motion.button>
                 </form>
 
                 <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>
@@ -75,7 +99,7 @@ const Login = () => {
                     </p>
                 </div>
             </div>
-        </div>
+        </motion.div>
     );
 };
 

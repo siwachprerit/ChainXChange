@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { User, Wallet, History, ArrowRight, ArrowLeft, ShoppingCart, Info, UserX } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { motion } from 'framer-motion';
 
 const Profile = () => {
     const { user } = useAuth();
@@ -62,92 +63,113 @@ const Profile = () => {
         );
     }
 
+    const containerVariants = {
+        hidden: { opacity: 0 },
+        visible: {
+            opacity: 1,
+            transition: {
+                staggerChildren: 0.1
+            }
+        }
+    };
+
+    const itemVariants = {
+        hidden: { opacity: 0, y: 20 },
+        visible: {
+            opacity: 1,
+            y: 0,
+            transition: {
+                type: 'spring',
+                stiffness: 100,
+                damping: 15
+            }
+        }
+    };
+
     return (
-        <div className="container">
-            <div className="page-header">
-                <h1 className="page-title">Profile Settings</h1>
-                <p className="page-subtitle">Personalize your account and review your trade activity</p>
-            </div>
+        <motion.div
+            className="container"
+            initial="hidden"
+            animate="visible"
+            variants={containerVariants}
+            style={{ position: 'relative' }}
+        >
+            <motion.div variants={itemVariants} style={{ marginBottom: '4rem' }}>
+                <h1 style={{
+                    fontSize: 'clamp(2.5rem, 6vw, 4.5rem)',
+                    fontWeight: 900,
+                    letterSpacing: '-0.05em',
+                    lineHeight: 1,
+                    marginBottom: '1rem'
+                }}>
+                    Account <br />
+                    <span className="text-gradient" style={{ animation: 'shine 3s linear infinite', display: 'inline-block' }}>Control Center</span>
+                </h1>
+                <p style={{ fontSize: '1.25rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
+                    Secure management of your account credentials and system identity.
+                </p>
+            </motion.div>
 
             <div className="profile-grid" style={{
                 display: 'grid',
-                gridTemplateColumns: 'minmax(0, 1fr) 2fr',
-                gap: '2.5rem',
+                gridTemplateColumns: 'repeat(12, 1fr)',
+                gap: '1.5rem',
                 alignItems: 'start'
             }}>
 
-                {/* Profile Details */}
-                <div>
-                    <div className="card" style={{ padding: '2.5rem 2rem' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '2.5rem' }}>
-                            <div style={{ background: 'var(--bg-tertiary)', padding: '10px', borderRadius: '12px' }}>
-                                <User size={24} style={{ color: 'var(--accent-primary)' }} />
-                            </div>
-                            <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0 }}>Account Information</h2>
+                {/* Profile Details Bento */}
+                <motion.div variants={itemVariants} style={{ gridColumn: 'span 4' }}>
+                    <div className="card" style={{
+                        padding: '3rem 2rem',
+                        background: 'rgba(255, 255, 255, 0.02)',
+                        border: '1px solid rgba(255, 255, 255, 0.05)'
+                    }}>
+                        <div style={{
+                            width: '80px',
+                            height: '80px',
+                            borderRadius: '24px',
+                            background: 'var(--gradient-primary)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            marginBottom: '2rem',
+                            boxShadow: '0 12px 24px rgba(240, 185, 11, 0.2)'
+                        }}>
+                            <User size={40} style={{ color: 'black' }} />
                         </div>
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
                             <div>
-                                <label className="form-label" style={{ fontWeight: 700, fontSize: '0.8rem', color: 'var(--text-muted)', letterSpacing: '0.05em', marginBottom: '0.75rem' }}>USERNAME</label>
-                                <div className="form-control" style={{
-                                    background: 'var(--bg-tertiary)',
-                                    height: '54px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    border: '1px solid var(--border-color)',
-                                    borderRadius: '12px',
-                                    fontWeight: 700,
-                                    padding: '0 1.25rem',
-                                    fontSize: '1rem'
-                                }}>
-                                    {user.username}
-                                </div>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--accent-primary)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>IDENTIFIER</label>
+                                <div style={{ fontSize: '1.5rem', fontWeight: 800, marginTop: '0.5rem' }}>{user.username}</div>
                             </div>
 
                             <div>
-                                <label className="form-label" style={{ fontWeight: 700, fontSize: '0.8rem', color: 'var(--text-muted)', letterSpacing: '0.05em', marginBottom: '0.75rem' }}>EMAIL ADDRESS</label>
-                                <div className="form-control" style={{
-                                    background: 'var(--bg-tertiary)',
-                                    height: '54px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    border: '1px solid var(--border-color)',
-                                    borderRadius: '12px',
-                                    fontWeight: 700,
-                                    padding: '0 1.25rem',
-                                    fontSize: '1rem'
-                                }}>
-                                    {user.email}
-                                </div>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>SECURE EMAIL</label>
+                                <div style={{ fontSize: '1rem', fontWeight: 600, marginTop: '0.5rem', opacity: 0.8 }}>{user.email}</div>
                             </div>
 
-                            <div>
-                                <label className="form-label" style={{ fontWeight: 700, fontSize: '0.8rem', color: 'var(--text-muted)', letterSpacing: '0.05em', marginBottom: '0.75rem' }}>WALLET BALANCE</label>
-                                <div className="form-control" style={{
-                                    background: 'rgba(240, 185, 11, 0.05)',
-                                    height: '60px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    border: '1px solid rgba(240, 185, 11, 0.3)',
-                                    borderRadius: '12px',
-                                    color: 'var(--accent-primary)',
-                                    fontWeight: 800,
-                                    fontSize: '1.25rem',
-                                    padding: '0 1.25rem'
-                                }}>
-                                    ${formatNumber(user.wallet)}
-                                </div>
+                            <div style={{
+                                background: 'rgba(240, 185, 11, 0.05)',
+                                padding: '1.5rem',
+                                borderRadius: '20px',
+                                border: '1px solid rgba(240, 185, 11, 0.1)'
+                            }}>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--accent-primary)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>AVAILABLE LIQUIDITY</label>
+                                <div style={{ fontSize: '2.5rem', fontWeight: 900, marginTop: '0.5rem' }}>${formatNumber(user.wallet)}</div>
                             </div>
 
-                            <Link to="/wallet" className="btn btn-primary btn-lg" style={{ width: '100%', height: '54px', marginTop: '0.5rem', borderRadius: '12px', fontWeight: 700 }}>
-                                <Wallet size={20} style={{ marginRight: '10px' }} /> Manage Wallet
-                            </Link>
+                            <motion.div whileHover={{ y: -5 }} whileTap={{ scale: 0.95 }}>
+                                <Link to="/wallet" className="btn btn-primary" style={{ width: '100%', height: '64px', borderRadius: '20px', fontWeight: 800, fontSize: '1rem' }}>
+                                    MANAGE WALLET
+                                </Link>
+                            </motion.div>
                         </div>
                     </div>
-                </div>
+                </motion.div>
 
-                {/* Transaction History */}
-                <div>
+                {/* Transaction History Bento */}
+                <motion.div variants={itemVariants} style={{ gridColumn: 'span 8' }}>
                     <div className="card" style={{ padding: '0' }}>
                         <div style={{ padding: '2.5rem 2rem 1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -220,18 +242,18 @@ const Profile = () => {
                             </div>
                         )}
                     </div>
-                </div>
+                </motion.div>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginTop: '3rem' }}>
+            <motion.div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginTop: '3rem' }} variants={itemVariants}>
                 <Link to="/portfolio" className="btn btn-secondary btn-lg" style={{ borderRadius: '14px', padding: '0 2rem', height: '54px' }}>
                     View Performance
                 </Link>
                 <Link to="/" className="btn btn-secondary btn-lg" style={{ borderRadius: '14px', padding: '0 2rem', height: '54px' }}>
                     <ArrowLeft size={18} style={{ marginRight: '8px' }} /> Back to Markets
                 </Link>
-            </div>
-        </div>
+            </motion.div>
+        </motion.div>
     );
 };
 

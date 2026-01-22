@@ -2,7 +2,8 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useNotifications } from '../context/NotificationContext';
-import { Link as LogoIcon, ChartPie, User as UserIcon, LogOut, UserPlus, LogIn, Sun, Moon, Wallet, History, Bell, Check, Trash2, LayoutGrid } from 'lucide-react';
+import { Link as LogoIcon, ChartPie, User as UserIcon, LogOut, UserPlus, LogIn, Sun, Moon, Wallet, History, Bell, Check, Trash2, LayoutGrid, Info } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const Navbar = () => {
     const { user, logout } = useAuth();
@@ -42,60 +43,84 @@ const Navbar = () => {
 
     return (
         <header>
-            <nav>
+            <nav style={{ background: 'var(--glass-bg)', borderBottom: '1px solid var(--border-color)', backdropFilter: 'blur(20px)' }}>
                 <div className="navbar-container">
                     <div className="navbar-brand">
-                        <Link to="/" className="logo" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            <div style={{ background: 'var(--gradient-primary)', borderRadius: '8px', padding: '6px', display: 'flex' }}>
-                                <LogoIcon size={20} style={{ color: 'black' }} />
+                        <Link to="/" className="logo" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <div style={{
+                                background: 'var(--gradient-primary)',
+                                width: '40px',
+                                height: '40px',
+                                borderRadius: '12px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                boxShadow: '0 8px 16px rgba(240, 185, 11, 0.2)'
+                            }}>
+                                <LogoIcon size={24} style={{ color: 'black' }} />
                             </div>
-                            <span style={{ fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.02em' }}>ChainXChange</span>
+                            <span style={{
+                                fontSize: '1.5rem',
+                                fontWeight: 900,
+                                letterSpacing: '-0.05em',
+                                color: 'var(--text-primary)',
+                                fontFamily: "'Titillium Web', sans-serif"
+                            }}>
+                                CHAINXCHANGE
+                            </span>
                         </Link>
                     </div>
+
                     <ul className="nav-menu">
                         <li className="nav-item">
-                            <Link to="/" className="nav-link">
-                                <LayoutGrid size={18} style={{ marginRight: '6px' }} /> Markets
+                            <Link to="/" className="nav-link" style={{ fontWeight: 700, fontSize: '0.9rem', letterSpacing: '0.05em' }}>
+                                MARKETS
                             </Link>
                         </li>
+                        {/* <li className="nav-item">
+                            <Link to="/about" className="nav-link" style={{ fontWeight: 700, fontSize: '0.9rem', letterSpacing: '0.05em' }}>
+                                ABOUT
+                            </Link>
+                        </li> */}
                         {user ? (
                             <>
                                 <li className="nav-item">
-                                    <Link to="/portfolio" className="nav-link">
-                                        <ChartPie size={18} style={{ marginRight: '4px' }} /> Portfolio
-                                    </Link>
+                                    <Link to="/portfolio" className="nav-link" style={{ fontWeight: 700, fontSize: '0.9rem' }}>PORTFOLIO</Link>
                                 </li>
                                 <li className="nav-item">
-                                    <Link to="/wallet" className="nav-link">
-                                        <Wallet size={18} style={{ marginRight: '4px' }} /> Wallet
-                                    </Link>
+                                    <Link to="/wallet" className="nav-link" style={{ fontWeight: 700, fontSize: '0.9rem' }}>WALLET</Link>
                                 </li>
                                 <li className="nav-item">
-                                    <Link to="/history" className="nav-link">
-                                        <History size={18} style={{ marginRight: '4px' }} /> History
-                                    </Link>
+                                    <Link to="/profile" className="nav-link" style={{ fontWeight: 700, fontSize: '0.9rem' }}>PROFILE</Link>
                                 </li>
                                 <li className="nav-item">
-                                    <Link to="/profile" className="nav-link">
-                                        <UserIcon size={18} style={{ marginRight: '4px' }} /> Profile
-                                    </Link>
-                                </li>
-                                <li className="nav-item">
-                                    <button onClick={handleLogout} className="nav-link" style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 'inherit' }}>
-                                        <LogOut size={18} style={{ marginRight: '4px' }} /> Logout
-                                    </button>
+                                    <motion.button
+                                        whileHover={{ scale: 1.05 }}
+                                        whileTap={{ scale: 0.95 }}
+                                        onClick={handleLogout}
+                                        className="btn btn-secondary"
+                                        style={{
+                                            borderRadius: '100px',
+                                            padding: '0.5rem 1.25rem',
+                                            fontWeight: 800,
+                                            fontSize: '0.8rem',
+                                            background: 'var(--danger-bg)',
+                                            color: 'var(--danger-color)',
+                                            border: '1px solid rgba(246, 70, 93, 0.2)'
+                                        }}
+                                    >
+                                        LOGOUT
+                                    </motion.button>
                                 </li>
                             </>
                         ) : (
                             <>
                                 <li className="nav-item">
-                                    <Link to="/signup" className="nav-link">
-                                        <UserPlus size={18} style={{ marginRight: '4px' }} /> Register
-                                    </Link>
+                                    <Link to="/signup" className="nav-link" style={{ fontWeight: 700, fontSize: '0.9rem' }}>REGISTER</Link>
                                 </li>
                                 <li className="nav-item">
-                                    <Link to="/login" className="nav-link">
-                                        <LogIn size={18} style={{ marginRight: '4px' }} /> Login
+                                    <Link to="/login" className="btn btn-primary" style={{ borderRadius: '100px', padding: '0.6rem 1.5rem', fontWeight: 800, fontSize: '0.8rem' }}>
+                                        LOGIN
                                     </Link>
                                 </li>
                             </>
@@ -111,39 +136,46 @@ const Navbar = () => {
                                     {unreadCount > 0 && <span className="notification-dot"></span>}
                                 </button>
 
-                                {showNotifications && (
-                                    <div className="notification-dropdown">
-                                        <div className="notification-header">
-                                            <h3>Notifications</h3>
-                                            <div className="notification-actions">
-                                                <button onClick={markAllAsRead} title="Mark all as read">
-                                                    <Check size={16} />
-                                                </button>
-                                                <button onClick={clearNotifications} title="Clear all">
-                                                    <Trash2 size={16} />
-                                                </button>
+                                <AnimatePresence>
+                                    {showNotifications && (
+                                        <motion.div
+                                            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                                            exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                            className="notification-dropdown"
+                                        >
+                                            <div className="notification-header">
+                                                <h3>Notifications</h3>
+                                                <div className="notification-actions">
+                                                    <button onClick={markAllAsRead} title="Mark all as read">
+                                                        <Check size={16} />
+                                                    </button>
+                                                    <button onClick={clearNotifications} title="Clear all">
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                </div>
                                             </div>
-                                        </div>
-                                        <div className="notification-list">
-                                            {notifications.length === 0 ? (
-                                                <div className="notification-empty">No notifications</div>
-                                            ) : (
-                                                notifications.map(n => (
-                                                    <div
-                                                        key={n.id}
-                                                        className={`notification-item ${!n.read ? 'unread' : ''}`}
-                                                        onClick={() => markAsRead(n.id)}
-                                                    >
-                                                        <div className="notification-msg">{n.message}</div>
-                                                        <div className="notification-time">
-                                                            {new Date(n.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            <div className="notification-list">
+                                                {notifications.length === 0 ? (
+                                                    <div className="notification-empty">No notifications</div>
+                                                ) : (
+                                                    notifications.map(n => (
+                                                        <div
+                                                            key={n.id}
+                                                            className={`notification-item ${!n.read ? 'unread' : ''}`}
+                                                            onClick={() => markAsRead(n.id)}
+                                                        >
+                                                            <div className="notification-msg">{n.message}</div>
+                                                            <div className="notification-time">
+                                                                {new Date(n.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                ))
-                                            )}
-                                        </div>
-                                    </div>
-                                )}
+                                                    ))
+                                                )}
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
                             </li>
                         )}
                         <li className="nav-item">

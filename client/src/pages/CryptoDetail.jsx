@@ -11,6 +11,7 @@ import { useNotifications } from '../context/NotificationContext';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import Skeleton from '../components/Skeleton';
+import { motion, AnimatePresence } from 'framer-motion';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler);
 
@@ -221,13 +222,42 @@ const CryptoDetail = () => {
         ],
     };
 
+    const containerVariants = {
+        hidden: { opacity: 0 },
+        visible: {
+            opacity: 1,
+            transition: {
+                staggerChildren: 0.1
+            }
+        }
+    };
+
+    const itemVariants = {
+        hidden: { opacity: 0, y: 20 },
+        visible: {
+            opacity: 1,
+            y: 0,
+            transition: {
+                type: 'spring',
+                stiffness: 100,
+                damping: 15
+            }
+        }
+    };
+
     return (
-        <div className="container" style={{ paddingBottom: '4rem' }}>
-            <div style={{ marginBottom: '2rem' }}>
+        <motion.div
+            className="container"
+            style={{ paddingBottom: '4rem' }}
+            initial="hidden"
+            animate="visible"
+            variants={containerVariants}
+        >
+            <motion.div style={{ marginBottom: '2rem' }} variants={itemVariants}>
                 <Link to="/" className="btn btn-secondary btn-sm" style={{ paddingLeft: '0.75rem' }}>
                     <ArrowLeft size={16} style={{ marginRight: '6px' }} /> Markets
                 </Link>
-            </div>
+            </motion.div>
 
             <div className="crypto-detail-grid" style={{
                 display: 'grid',
@@ -237,7 +267,7 @@ const CryptoDetail = () => {
             }}>
                 {/* Main Content Area */}
                 <div style={{ minWidth: 0 }}>
-                    <div className="card" style={{ padding: '2rem' }}>
+                    <motion.div className="card" style={{ padding: '2rem' }} variants={itemVariants}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                 {showSkeleton ? (
@@ -314,12 +344,23 @@ const CryptoDetail = () => {
                             {showSkeleton ? (
                                 <Skeleton width="100%" height="100%" />
                             ) : (
-                                chartData ? <Line options={chartOptions} data={chartJsData} /> : <div className="loading">Loading Chart Data...</div>
+                                <AnimatePresence mode="wait">
+                                    <motion.div
+                                        key={timeframe}
+                                        initial={{ opacity: 0, x: 20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        exit={{ opacity: 0, x: -20 }}
+                                        transition={{ duration: 0.2 }}
+                                        style={{ height: '100%' }}
+                                    >
+                                        {chartData ? <Line options={chartOptions} data={chartJsData} /> : <div className="loading">Loading Chart Data...</div>}
+                                    </motion.div>
+                                </AnimatePresence>
                             )}
                         </div>
-                    </div>
+                    </motion.div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', marginTop: '2rem' }}>
+                    <motion.div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', marginTop: '2rem' }} variants={itemVariants}>
                         {[
                             { label: 'Market Cap', value: coin ? `$${formatNumber(coin.market_cap)}` : null, icon: <Activity size={18} /> },
                             { label: '24h Volume', value: coin ? `$${formatNumber(coin.total_volume)}` : null, icon: <Clock size={18} /> },
@@ -337,11 +378,11 @@ const CryptoDetail = () => {
                                 )}
                             </div>
                         ))}
-                    </div>
+                    </motion.div>
                 </div>
 
                 {/* Sidebar Trading Panel */}
-                <div style={{ position: 'sticky', top: '100px' }}>
+                <motion.div style={{ position: 'sticky', top: '100px' }} variants={itemVariants}>
                     <div className="card" style={{ padding: '2.5rem 2rem' }}>
                         <div style={{
                             display: 'flex',
@@ -465,7 +506,9 @@ const CryptoDetail = () => {
                                     </div>
                                 </div>
 
-                                <button
+                                <motion.button
+                                    whileHover={{ scale: 1.02 }}
+                                    whileTap={{ scale: 0.98 }}
                                     type="submit"
                                     className={`btn btn-lg ${activeTab === 'buy' ? 'btn-success' : 'btn-danger'}`}
                                     style={{
@@ -478,7 +521,7 @@ const CryptoDetail = () => {
                                     }}
                                 >
                                     {activeTab === 'buy' ? `Buy ${coin?.symbol?.toUpperCase()}` : `Sell ${coin?.symbol?.toUpperCase()}`}
-                                </button>
+                                </motion.button>
                             </form>
                         ) : (
                             <div style={{ textAlign: 'center', padding: '1rem 0' }}>
@@ -504,9 +547,9 @@ const CryptoDetail = () => {
                             </div>
                         )}
                     </div>
-                </div>
+                </motion.div>
             </div>
-        </div>
+        </motion.div>
     );
 };
 
