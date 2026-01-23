@@ -8,12 +8,11 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNotifications } from '../context/NotificationContext';
-import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler } from 'chart.js';
-import { Line } from 'react-chartjs-2';
 import Skeleton from '../components/Skeleton';
 import { motion, AnimatePresence } from 'framer-motion';
-
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler);
+import Counter from '../components/Counter';
+import AdvancedChart from '../components/AdvancedChart';
+import confetti from 'canvas-confetti';
 
 const CryptoDetail = () => {
     const { coinId } = useParams();
@@ -22,6 +21,8 @@ const CryptoDetail = () => {
 
     const [coin, setCoin] = useState(null);
     const [chartData, setChartData] = useState(null);
+    const [volumeData, setVolumeData] = useState(null);
+    const [tradeMarkers, setTradeMarkers] = useState([]);
     const [timeframe, setTimeframe] = useState('24h');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -31,6 +32,11 @@ const CryptoDetail = () => {
     const [quantity, setQuantity] = useState('');
     const [estimatedTotal, setEstimatedTotal] = useState(0);
     const [isWatchlisted, setIsWatchlisted] = useState(false);
+    const [sentiment, setSentiment] = useState(null);
+    const [whales, setWhales] = useState([]);
+    const [orderType, setOrderType] = useState('market'); // market or limit
+    const [limitPrice, setLimitPrice] = useState('');
+    const [comparisonCoin, setComparisonCoin] = useState(null);
     const [theme, setTheme] = useState(document.body.getAttribute('data-theme') || 'light');
     const { addNotification } = useNotifications();
 
@@ -46,22 +52,65 @@ const CryptoDetail = () => {
         observer.observe(document.body, { attributes: true });
         return () => observer.disconnect();
     }, []);
+    const fetchExtraData = async () => {
+        try {
+            const [sentRes, whaleRes] = await Promise.all([
+                axios.get(`/api/crypto/sentiment/${coinId}`),
+                axios.get('/api/crypto/whales')
+            ]);
+
+            if (sentRes.data.success) setSentiment(sentRes.data);
+            if (whaleRes.data.success) setWhales(whaleRes.data.alerts);
+        } catch (err) {
+            console.error("Using fallback for extra data");
+            // Fallback Sentiment
+            setSentiment({
+                fearGreed: Math.floor(Math.random() * 40) + 40,
+                label: 'Neutral',
+                whaleActivity: 'Accumulating'
+            });
+            // Fallback Whales
+            setWhales([
+                { id: 1, coin: coinId?.toUpperCase(), amount: 'High Value', from: 'Unknown', to: 'Exchange', time: '5m ago' },
+                { id: 2, coin: 'USDT', amount: '1,000,000', from: 'Treasury', to: 'Binance', time: '12m ago' },
+                { id: 3, coin: coinId?.toUpperCase(), amount: 'Large Move', from: 'Wallet', to: 'Wallet', time: '1h ago' }
+            ]);
+        }
+    };
 
     const fetchChartData = async (tf) => {
         setTimeframe(tf);
         try {
             const res = await axios.get(`/api/crypto/chart-data/${coinId}?timeframe=${tf}`);
-            let rawChartData = res.data;
-            if (rawChartData) {
-                if (!Array.isArray(rawChartData) && rawChartData.prices) {
-                    rawChartData = rawChartData.prices;
+            if (res.data) {
+                if (res.data.prices) {
+                    setChartData(res.data.prices.map(p => ({ x: p[0], y: p[1] })));
                 }
-                if (Array.isArray(rawChartData)) {
-                    setChartData(rawChartData.map(p => ({ x: p[0], y: p[1] })));
+                if (res.data.total_volumes) {
+                    setVolumeData(res.data.total_volumes.map(v => ({ x: v[0], y: v[1] })));
                 }
             }
         } catch (err) {
             console.error("Error fetching chart data", err);
+        }
+    };
+
+    const fetchTradeMarkers = async () => {
+        if (!user) return;
+        try {
+            const res = await axios.get('/api/auth/profile');
+            if (res.data.success && res.data.transactions) {
+                const coinHistory = res.data.transactions
+                    .filter(tx => tx.coinId === coinId)
+                    .map(tx => ({
+                        time: Math.floor(new Date(tx.timestamp).getTime() / 1000),
+                        type: tx.type,
+                        amount: tx.quantity
+                    }));
+                setTradeMarkers(coinHistory);
+            }
+        } catch (err) {
+            console.error("Error fetching markers", err);
         }
     };
 
@@ -80,24 +129,27 @@ const CryptoDetail = () => {
                     setError(detailRes.data.message || 'Failed to fetch coin details');
                 }
 
-                let rawChartData = chartRes.data;
-                if (rawChartData) {
-                    if (!Array.isArray(rawChartData) && rawChartData.prices) {
-                        rawChartData = rawChartData.prices;
+                if (chartRes.data) {
+                    if (chartRes.data.prices) {
+                        setChartData(chartRes.data.prices.map(p => ({ x: p[0], y: p[1] })));
                     }
-                    if (Array.isArray(rawChartData)) {
-                        setChartData(rawChartData.map(p => ({ x: p[0], y: p[1] })));
+                    if (chartRes.data.total_volumes) {
+                        setVolumeData(chartRes.data.total_volumes.map(v => ({ x: v[0], y: v[1] })));
                     }
                 }
+
+                await Promise.all([
+                    fetchTradeMarkers(),
+                    fetchExtraData()
+                ]);
             } catch (err) {
                 setError('Error loading coin details');
-                console.error(err);
             } finally {
                 setLoading(false);
             }
         };
         fetchData();
-    }, [coinId]);
+    }, [coinId, user?.username]);
 
     useEffect(() => {
         if (coin) {
@@ -149,11 +201,16 @@ const CryptoDetail = () => {
         }
 
         try {
-            const endpoint = activeTab === 'buy' ? '/api/crypto/buy' : '/api/crypto/sell';
+            const endpoint = orderType === 'market'
+                ? (activeTab === 'buy' ? '/api/crypto/buy' : '/api/crypto/sell')
+                : '/api/crypto/limit-order';
+
             const payload = {
                 coinId,
                 quantity: parseFloat(quantity),
-                price: coin.current_price
+                price: orderType === 'market' ? coin.current_price : parseFloat(limitPrice),
+                limitPrice: parseFloat(limitPrice),
+                type: activeTab
             };
 
             const res = await axios.post(endpoint, payload);
@@ -161,6 +218,15 @@ const CryptoDetail = () => {
             if (res.data.success) {
                 const actionText = activeTab === 'buy' ? 'Bought' : 'Sold';
                 toast.success(`${activeTab === 'buy' ? 'Buy' : 'Sell'} order successful!`);
+
+                // Trigger celebratory confetti
+                confetti({
+                    particleCount: 150,
+                    spread: 70,
+                    origin: { y: 0.6 },
+                    colors: [activeTab === 'buy' ? '#02c076' : '#f6465d', '#f0b90b', '#ffffff']
+                });
+
                 addNotification(`${actionText} ${quantity} ${coin.symbol.toUpperCase()} at $${formatPrice(coin.current_price)}`, 'success');
                 setQuantity('');
                 setEstimatedTotal(0);
@@ -305,7 +371,9 @@ const CryptoDetail = () => {
                                     </>
                                 ) : (
                                     <>
-                                        <div style={{ fontSize: '2.25rem', fontWeight: 800 }}>${formatPrice(coin?.current_price)}</div>
+                                        <div style={{ fontSize: '2.25rem', fontWeight: 800 }}>
+                                            <Counter value={coin?.current_price} prefix="$" decimals={coin?.current_price < 1 ? 6 : 2} />
+                                        </div>
                                         <div style={{
                                             color: coin?.price_change_percentage_24h >= 0 ? 'var(--success-color)' : 'var(--danger-color)',
                                             fontWeight: 700,
@@ -319,77 +387,148 @@ const CryptoDetail = () => {
                             </div>
                         </div>
 
-                        {/* Chart Controls */}
-                        <div style={{ display: 'flex', gap: '6px', marginBottom: '2rem', background: 'var(--bg-tertiary)', padding: '4px', borderRadius: '10px', width: 'fit-content', flexWrap: 'wrap' }}>
-                            {['1h', '24h', '7d', '1m', '1y'].map(tf => (
-                                <button
-                                    key={tf}
-                                    className={`btn btn-sm ${timeframe === tf ? 'btn-primary' : ''}`}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
+                            <div style={{ display: 'flex', gap: '6px', background: 'var(--bg-tertiary)', padding: '4px', borderRadius: '10px', width: 'fit-content' }}>
+                                {['1h', '24h', '7d', '1m', '1y'].map(tf => (
+                                    <button
+                                        key={tf}
+                                        className={`btn btn-sm ${timeframe === tf ? 'btn-primary' : ''}`}
+                                        style={{
+                                            borderRadius: '8px', minWidth: '50px',
+                                            background: timeframe === tf ? 'var(--accent-primary)' : 'transparent',
+                                            color: timeframe === tf ? 'black' : 'var(--text-secondary)', border: 'none'
+                                        }}
+                                        onClick={() => fetchChartData(tf)}
+                                        disabled={showSkeleton}
+                                    >
+                                        {tf.toUpperCase()}
+                                    </button>
+                                ))}
+                            </div>
+
+                            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                                <span style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-muted)' }}>COMPARE:</span>
+                                <select
+                                    onChange={(e) => setComparisonCoin(e.target.value)}
                                     style={{
-                                        borderRadius: '8px',
-                                        minWidth: '50px',
-                                        background: timeframe === tf ? 'var(--accent-primary)' : 'transparent',
-                                        color: timeframe === tf ? 'black' : 'var(--text-secondary)',
-                                        border: 'none'
+                                        background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)',
+                                        color: 'white', padding: '6px 12px', borderRadius: '8px', fontSize: '0.8rem', outline: 'none'
                                     }}
-                                    onClick={() => fetchChartData(tf)}
-                                    disabled={showSkeleton}
                                 >
-                                    {tf.toUpperCase()}
-                                </button>
-                            ))}
+                                    <option value="">None</option>
+                                    <option value="bitcoin">Bitcoin</option>
+                                    <option value="ethereum">Ethereum</option>
+                                    <option value="solana">Solana</option>
+                                </select>
+                            </div>
                         </div>
 
-                        <div style={{ height: '400px', width: '100%' }} className="chart-container-wrapper">
+                        <div style={{ height: '500px', width: '100%' }} className="chart-container-wrapper">
                             {showSkeleton ? (
                                 <Skeleton width="100%" height="100%" />
                             ) : (
                                 <AnimatePresence mode="wait">
                                     <motion.div
-                                        key={timeframe}
-                                        initial={{ opacity: 0, x: 20 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        exit={{ opacity: 0, x: -20 }}
-                                        transition={{ duration: 0.2 }}
+                                        key={`${timeframe}-${comparisonCoin}`}
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
                                         style={{ height: '100%' }}
                                     >
-                                        {chartData ? <Line options={chartOptions} data={chartJsData} /> : <div className="loading">Loading Chart Data...</div>}
+                                        {chartData ? (
+                                            <AdvancedChart
+                                                key={`${coinId}-${timeframe}-${comparisonCoin}`}
+                                                data={chartData}
+                                                volumeData={volumeData}
+                                                markers={tradeMarkers}
+                                                comparisonCoinId={comparisonCoin}
+                                                colors={{
+                                                    lineColor: coin?.price_change_percentage_24h >= 0 ? '#02c076' : '#f6465d',
+                                                    areaTopColor: coin?.price_change_percentage_24h >= 0 ? 'rgba(2, 192, 118, 0.2)' : 'rgba(246, 70, 93, 0.2)',
+                                                    areaBottomColor: 'rgba(0, 0, 0, 0)',
+                                                    textColor: 'var(--text-secondary)'
+                                                }}
+                                            />
+                                        ) : (
+                                            <div className="loading">Loading Chart Data...</div>
+                                        )}
                                     </motion.div>
                                 </AnimatePresence>
                             )}
                         </div>
                     </motion.div>
 
-                    <motion.div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', marginTop: '2rem' }} variants={itemVariants}>
-                        {[
-                            { label: 'Market Cap', value: coin ? `$${formatNumber(coin.market_cap)}` : null, icon: <Activity size={18} /> },
-                            { label: '24h Volume', value: coin ? `$${formatNumber(coin.total_volume)}` : null, icon: <Clock size={18} /> },
-                            { label: 'High 24h', value: coin ? `$${formatPrice(coin.high_24h)}` : null, icon: <TrendingUp size={18} /> },
-                            { label: 'Low 24h', value: coin ? `$${formatPrice(coin.low_24h)}` : null, icon: <TrendingDown size={18} /> }
-                        ].map((stat, i) => (
-                            <div className="card" key={i} style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)', fontSize: '0.9rem', fontWeight: 600 }}>
-                                    {stat.icon} {stat.label}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 280px', gap: '1.5rem', marginTop: '1.5rem' }}>
+                        <motion.div variants={itemVariants}>
+                            <div className="card" style={{ padding: '1.5rem' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '1.5rem' }}>
+                                    <div style={{ padding: '8px', background: 'rgba(243, 186, 47, 0.1)', borderRadius: '8px', color: '#f3ba2f' }}>
+                                        <Activity size={20} />
+                                    </div>
+                                    <h3 style={{ margin: 0, fontWeight: 800 }}>Market Sentiment</h3>
                                 </div>
-                                {showSkeleton ? (
-                                    <Skeleton width="120px" height="28px" />
-                                ) : (
-                                    <div style={{ fontSize: '1.35rem', fontWeight: 700, color: 'var(--text-primary)' }}>{stat.value}</div>
-                                )}
+                                <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
+                                    <div style={{ flex: 1, minWidth: '150px' }}>
+                                        <div style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '10px' }}>FEAR & GREED</div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                                            <div style={{ fontSize: '2.5rem', fontWeight: 900 }}>{sentiment?.fearGreed || '--'}</div>
+                                            <div style={{
+                                                padding: '4px 10px', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 800,
+                                                background: sentiment?.fearGreed > 50 ? 'rgba(2,192,118,0.1)' : 'rgba(246,70,93,0.1)',
+                                                color: sentiment?.fearGreed > 50 ? '#02c076' : '#f6465d'
+                                            }}>{sentiment?.label?.toUpperCase()}</div>
+                                        </div>
+                                    </div>
+                                    <div style={{ flex: 1, minWidth: '150px' }}>
+                                        <div style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '10px' }}>WHALE POSITIONING</div>
+                                        <div style={{ fontSize: '1.25rem', fontWeight: 800 }}>{sentiment?.whaleActivity || '--'}</div>
+                                    </div>
+                                </div>
                             </div>
-                        ))}
-                    </motion.div>
+                        </motion.div>
+
+                        <motion.div variants={itemVariants}>
+                            <div className="card" style={{ padding: '1.5rem', height: '100%' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '1.5rem' }}>
+                                    <div style={{ padding: '8px', background: 'rgba(243, 186, 47, 0.1)', borderRadius: '8px', color: '#f3ba2f' }}>
+                                        <Clock size={20} />
+                                    </div>
+                                    <h3 style={{ margin: 0, fontWeight: 800 }}>Whale Tracker</h3>
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                    {whales.map(whale => (
+                                        <div key={whale.id} style={{ fontSize: '0.8rem', paddingBottom: '8px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
+                                                <span style={{ fontWeight: 800, color: 'var(--accent-primary)' }}>{whale.coin} ALERT</span>
+                                                <span style={{ color: 'var(--text-muted)' }}>{whale.time}</span>
+                                            </div>
+                                            <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.75rem' }}>
+                                                {whale.amount} {whale.coin} moved from {whale.from} to {whale.to}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
                 </div>
 
                 {/* Sidebar Trading Panel */}
                 <motion.div style={{ position: 'sticky', top: '100px' }} variants={itemVariants}>
-                    <div className="card" style={{ padding: '2.5rem 2rem' }}>
+                    <div className="card" style={{
+                        padding: '2rem',
+                        background: 'var(--bg-secondary)',
+                        border: '1px solid var(--border-color)',
+                        borderRadius: '24px',
+                        boxShadow: 'var(--shadow-lg)'
+                    }}>
+                        {/* Buy/Sell Toggles */}
                         <div style={{
                             display: 'flex',
                             background: 'var(--bg-tertiary)',
-                            padding: '6px',
-                            borderRadius: '14px',
-                            marginBottom: '2.5rem'
+                            padding: '4px',
+                            borderRadius: '12px',
+                            marginBottom: '2rem',
+                            border: '1px solid var(--border-color)'
                         }}>
                             <button
                                 className="btn"
@@ -398,12 +537,15 @@ const CryptoDetail = () => {
                                     borderRadius: '10px',
                                     background: activeTab === 'buy' ? 'var(--success-color)' : 'transparent',
                                     color: activeTab === 'buy' ? 'white' : 'var(--text-secondary)',
-                                    height: '44px'
+                                    height: '40px',
+                                    fontSize: '0.9rem',
+                                    fontWeight: 800,
+                                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
                                 }}
                                 onClick={() => setActiveTab('buy')}
                                 disabled={showSkeleton}
                             >
-                                Buy
+                                BUY
                             </button>
                             <button
                                 className="btn"
@@ -412,12 +554,15 @@ const CryptoDetail = () => {
                                     borderRadius: '10px',
                                     background: activeTab === 'sell' ? 'var(--danger-color)' : 'transparent',
                                     color: activeTab === 'sell' ? 'white' : 'var(--text-secondary)',
-                                    height: '44px'
+                                    height: '40px',
+                                    fontSize: '0.9rem',
+                                    fontWeight: 800,
+                                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
                                 }}
                                 onClick={() => setActiveTab('sell')}
                                 disabled={showSkeleton}
                             >
-                                Sell
+                                SELL
                             </button>
                         </div>
 
@@ -429,40 +574,83 @@ const CryptoDetail = () => {
                             </div>
                         ) : user ? (
                             <form onSubmit={handleTrade} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                                <div className="form-group" style={{ margin: 0 }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-                                        <label className="form-label" style={{ margin: 0, fontWeight: 600 }}>Available</label>
-                                        <span style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--accent-primary)' }}>
-                                            ${user.wallet ? formatPrice(user.wallet) : '0.00'}
-                                        </span>
-                                    </div>
-                                    <div className="form-control" style={{
-                                        background: 'var(--bg-tertiary)',
-                                        border: '1px solid var(--border-color)',
-                                        height: '60px',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        padding: '0 1.25rem',
-                                        fontSize: '1.2rem',
-                                        fontWeight: 700,
-                                        borderRadius: '12px'
-                                    }}>
-                                        USD
-                                    </div>
+                                {/* Order Type Toggles */}
+                                <div style={{ display: 'flex', gap: '10px', marginBottom: '0.5rem' }}>
+                                    {['market', 'limit'].map(type => (
+                                        <button
+                                            key={type}
+                                            type="button"
+                                            onClick={() => setOrderType(type)}
+                                            style={{
+                                                flex: 1,
+                                                padding: '8px',
+                                                borderRadius: '8px',
+                                                border: '1px solid',
+                                                borderColor: orderType === type ? 'var(--accent-primary)' : 'var(--border-color)',
+                                                cursor: 'pointer',
+                                                fontSize: '0.75rem',
+                                                fontWeight: 800,
+                                                background: orderType === type ? 'rgba(240, 185, 11, 0.1)' : 'transparent',
+                                                color: orderType === type ? 'var(--accent-primary)' : 'var(--text-muted)',
+                                                textTransform: 'uppercase',
+                                                transition: 'all 0.2s'
+                                            }}
+                                        >
+                                            {type} Order
+                                        </button>
+                                    ))}
                                 </div>
 
+                                {/* Available Balance */}
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8rem' }}>
+                                    <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Available Balance</span>
+                                    <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>
+                                        ${user.wallet ? formatPrice(user.wallet) : '0.00'}
+                                    </span>
+                                </div>
+
+                                {/* Limit Price Input */}
+                                {orderType === 'limit' && (
+                                    <div className="form-group" style={{ margin: 0 }}>
+                                        <div style={{ position: 'relative' }}>
+                                            <input
+                                                type="number"
+                                                className="form-control"
+                                                style={{
+                                                    height: '56px',
+                                                    fontSize: '1rem',
+                                                    fontWeight: 600,
+                                                    borderRadius: '14px',
+                                                    background: 'var(--bg-tertiary)',
+                                                    border: '1px solid var(--border-color)',
+                                                    paddingLeft: '1.25rem'
+                                                }}
+                                                placeholder="Target Price"
+                                                value={limitPrice}
+                                                onChange={(e) => setLimitPrice(e.target.value)}
+                                                required
+                                            />
+                                            <span style={{ position: 'absolute', right: '1.25rem', top: '50%', transform: 'translateY(-50%)', fontWeight: 700, color: 'var(--text-muted)', fontSize: '0.8rem' }}>USD</span>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Quantity Input */}
                                 <div className="form-group" style={{ margin: 0 }}>
-                                    <label className="form-label" style={{ fontWeight: 600 }}>Amount to {activeTab}</label>
                                     <div style={{ position: 'relative' }}>
                                         <input
                                             type="number"
                                             className="form-control"
                                             style={{
-                                                height: '60px',
-                                                paddingRight: '5rem',
-                                                fontSize: '1.25rem',
-                                                fontWeight: 700,
-                                                borderRadius: '12px'
+                                                height: '64px',
+                                                paddingRight: '4rem',
+                                                paddingLeft: '1.25rem',
+                                                fontSize: '1.5rem',
+                                                fontWeight: 800,
+                                                borderRadius: '16px',
+                                                background: 'var(--bg-tertiary)',
+                                                border: '1px solid var(--border-color)',
+                                                color: 'var(--text-primary)'
                                             }}
                                             placeholder="0.00"
                                             value={quantity}
@@ -478,29 +666,31 @@ const CryptoDetail = () => {
                                             transform: 'translateY(-50%)',
                                             fontWeight: 800,
                                             color: 'var(--text-muted)',
-                                            fontSize: '0.9rem'
+                                            fontSize: '1rem'
                                         }}>
                                             {coin?.symbol?.toUpperCase()}
                                         </span>
                                     </div>
                                 </div>
 
+                                {/* Summary Box */}
                                 <div style={{
-                                    padding: '1.5rem',
-                                    background: 'var(--bg-tertiary)',
-                                    borderRadius: '14px',
-                                    border: '1px dashed var(--border-color)',
+                                    padding: '1.25rem',
+                                    borderRadius: '16px',
+                                    // background: 'var(--bg-tertiary)', 
+                                    border: '1px solid var(--border-color)',
                                     display: 'flex',
                                     flexDirection: 'column',
-                                    gap: '0.5rem'
+                                    gap: '0.75rem'
                                 }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-secondary)', fontSize: '0.9rem', fontWeight: 500 }}>
-                                        <span>Current Price</span>
-                                        <span>${formatPrice(coin?.current_price)}</span>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: 500 }}>
+                                        <span>Reference Price</span>
+                                        <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>${formatPrice(orderType === 'limit' && limitPrice ? limitPrice : coin?.current_price)}</span>
                                     </div>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 800, fontSize: '1.2rem', marginTop: '0.25rem' }}>
-                                        <span>Total</span>
-                                        <span style={{ color: activeTab === 'buy' ? 'var(--success-color)' : 'var(--danger-color)' }}>
+                                    <div style={{ width: '100%', height: '1px', background: 'var(--border-color)' }}></div>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Total Value</span>
+                                        <span style={{ fontSize: '1.4rem', fontWeight: 800, color: activeTab === 'buy' ? 'var(--success-color)' : 'var(--danger-color)' }}>
                                             ${estimatedTotal.toLocaleString(undefined, { maximumFractionDigits: 2 })}
                                         </span>
                                     </div>
@@ -510,17 +700,21 @@ const CryptoDetail = () => {
                                     whileHover={{ scale: 1.02 }}
                                     whileTap={{ scale: 0.98 }}
                                     type="submit"
-                                    className={`btn btn-lg ${activeTab === 'buy' ? 'btn-success' : 'btn-danger'}`}
+                                    className={`btn btn-lg`}
                                     style={{
                                         width: '100%',
-                                        height: '60px',
-                                        fontSize: '1.15rem',
-                                        fontWeight: 700,
+                                        height: '56px',
                                         borderRadius: '14px',
-                                        boxShadow: activeTab === 'buy' ? '0 10px 20px -10px var(--success-color)' : '0 10px 20px -10px var(--danger-color)'
+                                        fontSize: '1.1rem',
+                                        fontWeight: 800,
+                                        background: activeTab === 'buy' ? 'var(--success-color)' : 'var(--danger-color)',
+                                        color: '#ffffff',
+                                        boxShadow: activeTab === 'buy' ? '0 8px 20px rgba(2, 192, 118, 0.3)' : '0 8px 20px rgba(246, 70, 93, 0.3)',
+                                        border: 'none',
+                                        marginTop: '0.5rem'
                                     }}
                                 >
-                                    {activeTab === 'buy' ? `Buy ${coin?.symbol?.toUpperCase()}` : `Sell ${coin?.symbol?.toUpperCase()}`}
+                                    {activeTab === 'buy' ? 'Buy' : 'Sell'} {coin?.symbol?.toUpperCase()}
                                 </motion.button>
                             </form>
                         ) : (
@@ -548,8 +742,8 @@ const CryptoDetail = () => {
                         )}
                     </div>
                 </motion.div>
-            </div>
-        </motion.div>
+            </div >
+        </motion.div >
     );
 };
 

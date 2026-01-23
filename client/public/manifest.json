@@ -1,0 +1,16 @@
+{
+    "name": "ChainXChange",
+    "short_name": "ChainX",
+    "description": "Professional Crypto Trading Platform",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#0a0a0b",
+    "theme_color": "#f3ba2f",
+    "icons": [
+        {
+            "src": "/images/favicon.svg",
+            "sizes": "any",
+            "type": "image/svg+xml"
+        }
+    ]
+}

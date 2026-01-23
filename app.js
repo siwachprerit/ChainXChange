@@ -86,6 +86,7 @@ app.use(async (req, res, next) => {
 });
 
 // API Routes
+app.get('/api/leaderboard', CryptoController.getLeaderboard);
 app.use('/api/auth', authRoutes);
 app.use('/api/crypto', cryptoRoutes);
 app.use('/api/payment', paymentRoutes);

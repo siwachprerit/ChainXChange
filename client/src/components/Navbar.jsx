@@ -56,6 +56,9 @@ const Navbar = () => {
                         <Link to="/portfolio" className="nav-link" onClick={() => setShowMobileMenu(false)} style={{ fontWeight: 700, fontSize: '0.9rem' }}>PORTFOLIO</Link>
                     </li>
                     <li className="nav-item">
+                        <Link to="/leaderboard" className="nav-link" onClick={() => setShowMobileMenu(false)} style={{ fontWeight: 700, fontSize: '0.9rem' }}>LEADERBOARD</Link>
+                    </li>
+                    <li className="nav-item">
                         <Link to="/wallet" className="nav-link" onClick={() => setShowMobileMenu(false)} style={{ fontWeight: 700, fontSize: '0.9rem' }}>WALLET</Link>
                     </li>
                     <li className="nav-item">

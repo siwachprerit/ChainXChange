@@ -1,6 +1,8 @@
 const User = require('../models/User');
 const Portfolio = require('../models/Portfolio');
 const Transaction = require('../models/Transaction');
+const LimitOrder = require('../models/LimitOrder');
+const PortfolioHistory = require('../models/PortfolioHistory');
 const { fetchCoinGeckoDataWithCache } = require('../utils/geckoApi');
 const redisClient = require('../utils/redisClient'); // Import the shared client
 
@@ -218,6 +220,37 @@ class CryptoController {
                 }),
                 redisClient.del(`portfolio:${userId}`)
             ]);
+
+            // Achievement logic (Background)
+            (async () => {
+                const updatedUser = await User.findById(userId);
+                const achievements = updatedUser.achievements || [];
+                const newAchievements = [];
+
+                // Achievement: First Trade
+                if (!achievements.some(a => a.name === 'First Steps')) {
+                    newAchievements.push({
+                        name: 'First Steps',
+                        description: 'Completed your first trade on ChainXChange.',
+                        icon: '🎯'
+                    });
+                }
+
+                // Achievement: High Roller (Buy > $10,000)
+                if (totalCost > 10000 && !achievements.some(a => a.name === 'Whale')) {
+                    newAchievements.push({
+                        name: 'Whale',
+                        description: 'Executed a trade worth over $10,000.',
+                        icon: '🐋'
+                    });
+                }
+
+                if (newAchievements.length > 0) {
+                    await User.findByIdAndUpdate(userId, {
+                        $push: { achievements: { $each: newAchievements } }
+                    });
+                }
+            })().catch(err => console.error('Achievement logic error:', err));
 
             res.status(201).json({ success: true, message: 'Purchase successful' });
         } catch (error) {
@@ -731,6 +764,152 @@ class CryptoController {
                 chartData: generateMockChartData(basePrice, '1'),
                 news: []
             });
+        }
+    }
+    /**
+     * Get trader leaderboard
+     */
+    static async getLeaderboard(req, res) {
+        try {
+            // Get all users
+            const users = await User.find({}).lean();
+
+            // Get all portfolios
+            const allPortfolios = await Portfolio.find({}).lean();
+
+            // Get current prices for common coins to value portfolios
+            const coinIds = [...new Set(allPortfolios.map(p => p.coinId))].join(',');
+            let marketData = {};
+
+            if (coinIds) {
+                try {
+                    const fetchedPrices = await fetchCoinGeckoDataWithCache(
+                        `https://api.coingecko.com/api/v3/simple/price?ids=${coinIds}&vs_currencies=usd`,
+                        null,
+                        `lb-prices-${coinIds.substring(0, 50)}`, // Truncate key for safety
+                        5 * 60 * 1000
+                    );
+                    if (fetchedPrices) {
+                        marketData = fetchedPrices;
+                    }
+                } catch (err) {
+                    console.error('Error fetching leaderboard prices:', err);
+                    // Continue without latest prices
+                }
+            }
+
+            // Calculate total value for each user
+            const leaderboard = users.map(user => {
+                const userPortfolio = allPortfolios.filter(p => p.userId.toString() === user._id.toString());
+                const holdingsValue = userPortfolio.reduce((sum, p) => {
+                    // Safety check for marketData
+                    const price = (marketData && marketData[p.coinId]?.usd) || p.averageBuyPrice || 0;
+                    return sum + (p.quantity * price);
+                }, 0);
+
+                return {
+                    username: user.username,
+                    totalValue: (user.wallet || 0) + holdingsValue,
+                    achievementsCount: (user.achievements || []).length
+                };
+            });
+
+            // Sort by total value descending
+            leaderboard.sort((a, b) => b.totalValue - a.totalValue);
+
+            res.json({
+                success: true,
+                leaderboard: leaderboard.slice(0, 50) // Return top 50 instead of 10
+            });
+        } catch (error) {
+            console.error('Leaderboard error:', error);
+            res.status(500).json({ success: false, message: 'Error fetching leaderboard' });
+        }
+    }
+
+    /**
+     * Get sentiment data for a specific coin
+     */
+    static async getSentiment(req, res) {
+        try {
+            const { coinId } = req.params;
+            const fearGreed = Math.floor(Math.random() * 40) + 30; // 30-70 range
+
+            res.json({
+                success: true,
+                fearGreed,
+                label: fearGreed > 70 ? 'Extreme Greed' : fearGreed > 55 ? 'Greed' : fearGreed > 45 ? 'Neutral' : fearGreed > 25 ? 'Fear' : 'Extreme Fear',
+                buzz: Math.floor(Math.random() * 100),
+                whaleActivity: fearGreed > 50 ? 'Accumulating' : 'Distributing'
+            });
+        } catch (error) {
+            res.status(500).json({ success: false, message: 'Error fetching sentiment' });
+        }
+    }
+
+    /**
+     * Get simulated whale alerts
+     */
+    static async getWhaleAlerts(req, res) {
+        try {
+            const whales = [
+                { id: 1, type: 'large_move', coin: 'BTC', amount: '1,200', from: 'Unknown Wallet', to: 'Binance', time: '2m ago' },
+                { id: 2, type: 'large_move', coin: 'ETH', amount: '15,000', from: 'Coinbase', to: 'Unknown Wallet', time: '15m ago' },
+                { id: 3, type: 'large_move', coin: 'SOL', amount: '85,000', from: 'Unknown Wallet', to: 'Kraken', time: '1h ago' },
+                { id: 4, type: 'large_buy', coin: 'PEPE', amount: '2Trillion', from: 'Exchange', to: 'Unknown Wallet', time: '3h ago' }
+            ];
+            res.json({ success: true, alerts: whales });
+        } catch (error) {
+            res.status(500).json({ success: false, message: 'Error fetching whale alerts' });
+        }
+    }
+
+    /**
+     * Place a limit order
+     */
+    static async placeLimitOrder(req, res) {
+        try {
+            const { coinId, type, quantity, limitPrice } = req.body;
+            const userId = req.cookies.user; // Using cookie user ID as fallback if not in req.user
+
+            const order = new LimitOrder({
+                userId,
+                coinId,
+                type,
+                quantity,
+                limitPrice,
+                status: 'pending'
+            });
+
+            await order.save();
+            res.json({ success: true, message: 'Limit order placed successfully', order });
+        } catch (error) {
+            res.status(500).json({ success: false, message: 'Error placing limit order' });
+        }
+    }
+
+    /**
+     * Get portfolio history for equity curve
+     */
+    static async getPortfolioHistory(req, res) {
+        try {
+            const userId = req.cookies.user;
+
+            let history = await PortfolioHistory.find({ userId }).sort({ timestamp: 1 }).lean();
+
+            if (history.length < 2) {
+                const user = await User.findById(userId);
+                const baseValue = user ? user.wallet : 10000;
+                const now = Date.now();
+                history = Array.from({ length: 15 }, (_, i) => ({
+                    totalNetWorth: baseValue * (0.8 + (i * 0.05) + (Math.random() * 0.1)),
+                    timestamp: new Date(now - (15 - i) * 24 * 60 * 60 * 1000)
+                }));
+            }
+
+            res.json({ success: true, history });
+        } catch (error) {
+            res.status(500).json({ success: false, message: 'Error fetching portfolio history' });
         }
     }
 }

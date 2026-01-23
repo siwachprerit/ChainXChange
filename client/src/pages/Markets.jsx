@@ -304,125 +304,256 @@ const Markets = () => {
                 ))}
             </motion.div>
 
-            <motion.div
-                className="search-bar-container"
-                style={{ margin: '2rem 0', position: 'relative' }}
-                variants={itemVariants}
-            >
-                <Search size={24} style={{ position: 'absolute', left: '1.5rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--accent-primary)', zIndex: 10 }} />
-                <input
-                    type="text"
-                    placeholder="Search the ecosystem..."
-                    className="form-control"
-                    style={{
-                        paddingLeft: '4rem',
-                        height: '72px',
-                        borderRadius: '24px',
-                        fontSize: '1.25rem',
-                        fontWeight: 600,
-                        background: 'rgba(255,255,255,0.03)',
-                        border: '1px solid var(--border-color)',
-                        color: 'var(--text-primary)',
-                        transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
-                    }}
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                />
-            </motion.div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 380px', gap: '2.5rem', alignItems: 'start' }}>
+                {/* Main Markets Column */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                    <motion.div
+                        className="search-bar-container"
+                        style={{ position: 'relative' }}
+                        variants={itemVariants}
+                    >
+                        <Search size={24} style={{ position: 'absolute', left: '1.5rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--accent-primary)', zIndex: 10 }} />
+                        <input
+                            type="text"
+                            placeholder="Search the ecosystem..."
+                            className="form-control"
+                            style={{
+                                paddingLeft: '4rem',
+                                height: '64px',
+                                borderRadius: '18px',
+                                fontSize: '1.1rem',
+                                fontWeight: 600,
+                                background: 'rgba(255,255,255,0.03)',
+                                border: '1px solid var(--border-color)',
+                                color: 'var(--text-primary)',
+                                transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
+                            }}
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </motion.div>
 
-            {error && <motion.div className="alert alert-error" variants={itemVariants}>{error}</motion.div>}
+                    {error && <motion.div className="alert alert-error" variants={itemVariants}>{error}</motion.div>}
 
-            <motion.div className="table-container" variants={itemVariants}>
-                <table className="table">
-                    <thead>
-                        <tr>
-                            <th className="mobile-hide">#</th>
-                            <th style={{ width: '40px' }}></th>
-                            <th>Name</th>
-                            <th className="numeric-cell">Price</th>
-                            <th className="mobile-hide" style={{ textAlign: 'center' }}>24h Change</th>
-                            <th className="mobile-hide numeric-cell">Market Cap</th>
-                            <th className="mobile-hide numeric-cell">Volume</th>
-                            <th style={{ textAlign: 'right' }}>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <AnimatePresence mode="popLayout">
-                            {isLoading ? (
-                                Array(10).fill(0).map((_, i) => (
-                                    <tr key={`skeleton-${i}`}>
-                                        <td className="mobile-hide"><Skeleton width="20px" /></td>
-                                        <td><Skeleton width="20px" /></td>
-                                        <td>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                <Skeleton width="32px" height="32px" borderRadius="50%" />
+                    <motion.div className="table-container" variants={itemVariants} style={{ background: 'transparent', border: 'none', boxShadow: 'none' }}>
+                        <table className="table">
+                            <thead>
+                                <tr>
+                                    <th className="mobile-hide">#</th>
+                                    <th style={{ width: '40px' }}></th>
+                                    <th>Name</th>
+                                    <th className="numeric-cell">Price</th>
+                                    <th className="mobile-hide" style={{ textAlign: 'center' }}>24h Change</th>
+                                    <th className="mobile-hide numeric-cell">Volume</th>
+                                    <th style={{ textAlign: 'right' }}>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <AnimatePresence mode="popLayout">
+                                    {isLoading ? (
+                                        Array(10).fill(0).map((_, i) => (
+                                            <tr key={`skeleton-${i}`}>
+                                                <td className="mobile-hide"><Skeleton width="20px" /></td>
+                                                <td><Skeleton width="20px" /></td>
+                                                <td>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                        <Skeleton width="32px" height="32px" borderRadius="50%" />
+                                                        <div>
+                                                            <Skeleton width="80px" />
+                                                            <Skeleton width="40px" height="12px" />
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td><Skeleton width="60px" className="numeric-cell" /></td>
+                                                <td className="mobile-hide"><Skeleton width="50px" style={{ margin: '0 auto' }} /></td>
+                                                <td className="mobile-hide"><Skeleton width="100px" className="numeric-cell" /></td>
+                                                <td style={{ textAlign: 'right' }}><Skeleton width="60px" height="30px" borderRadius="8px" /></td>
+                                            </tr>
+                                        ))
+                                    ) : (
+                                        (filteredCoins || []).map((coin, index) => (
+                                            <motion.tr
+                                                key={coin.id}
+                                                layout
+                                                initial={{ opacity: 0, x: -10 }}
+                                                animate={{ opacity: 1, x: 0 }}
+                                                exit={{ opacity: 0, scale: 0.95 }}
+                                                transition={{ duration: 0.2 }}
+                                                style={{ borderBottom: '1px solid var(--border-color)' }}
+                                            >
+                                                <td className="mobile-hide" style={{ fontWeight: 600, opacity: 0.5 }}>{index + 1}</td>
+                                                <td>
+                                                    <motion.button
+                                                        whileHover={{ scale: 1.2 }}
+                                                        whileTap={{ scale: 0.8 }}
+                                                        onClick={(e) => toggleWatchlist(e, coin.id)}
+                                                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: activeWatchlist.coins.includes(coin.id) ? '#f3ba2f' : 'var(--text-muted)' }}
+                                                    >
+                                                        <Star size={18} fill={activeWatchlist.coins.includes(coin.id) ? '#f3ba2f' : 'none'} />
+                                                    </motion.button>
+                                                </td>
+                                                <td style={{ padding: '1.25rem 0.5rem' }}>
+                                                    <Link to={`/crypto/${coin.id}`} className="crypto-name" style={{ textDecoration: 'none', color: 'inherit' }}>
+                                                        <img src={coin.image} alt={coin.name} className="crypto-icon" style={{ width: '32px', height: '32px' }} />
+                                                        <div style={{ minWidth: 0, flex: 1 }}>
+                                                            <div style={{ fontWeight: 800, fontSize: '0.95rem', lineHeight: 1.2 }}>{coin.name}</div>
+                                                            <div className="crypto-symbol" style={{ fontWeight: 600, opacity: 0.6, fontSize: '0.75rem' }}>{coin.symbol?.toUpperCase()}</div>
+                                                        </div>
+                                                    </Link>
+                                                </td>
+                                                <td className="price-cell" style={{ fontWeight: 800, fontSize: '0.95rem' }}>${formatPrice(coin.current_price)}</td>
+                                                <td className={`mobile-hide change-cell ${coin.price_change_percentage_24h >= 0 ? 'change-positive' : 'change-negative'}`} style={{ fontWeight: 800, textAlign: 'center' }}>
+                                                    {coin.price_change_percentage_24h >= 0 ? '+' : ''}{coin.price_change_percentage_24h?.toFixed(2)}%
+                                                </td>
+                                                <td className="mobile-hide numeric-cell" style={{ fontWeight: 600, opacity: 0.8 }}>${formatNumber(coin.total_volume)}</td>
+                                                <td style={{ textAlign: 'right' }}>
+                                                    <Link to={`/crypto/${coin.id}`} className="btn btn-secondary btn-sm" style={{ borderRadius: '10px', padding: '0.6rem 1rem', fontWeight: 700, fontSize: '0.8rem' }}>
+                                                        Details
+                                                    </Link>
+                                                </td>
+                                            </motion.tr>
+                                        ))
+                                    )}
+                                </AnimatePresence>
+                            </tbody>
+                        </table>
+                        {!isLoading && filteredCoins.length === 0 && coins.length > 0 && (
+                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ textAlign: 'center', padding: '5rem', color: 'var(--text-muted)' }}>
+                                <Search size={64} style={{ marginBottom: '1.5rem', opacity: 0.2 }} />
+                                <h3 style={{ fontWeight: 800, color: 'var(--text-primary)' }}>No matches found</h3>
+                                <p style={{ fontWeight: 500 }}>Try adjusting your search or filters.</p>
+                            </motion.div>
+                        )}
+                    </motion.div>
+                </div>
+
+                {/* Watchlist Sidebar */}
+                <motion.div
+                    variants={itemVariants}
+                    style={{ position: 'sticky', top: '100px' }}
+                >
+                    <div className="card" style={{ padding: '2rem', minHeight: '600px', display: 'flex', flexDirection: 'column' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <div style={{ width: '32px', height: '32px', borderRadius: '10px', background: 'var(--gradient-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <Star size={18} fill="#000" />
+                                </div>
+                                <h3 style={{ fontSize: '1.15rem', fontWeight: 900, margin: 0 }}>Watchlist</h3>
+                            </div>
+                            <button
+                                onClick={() => setModalType('create')}
+                                className="btn btn-sm"
+                                style={{ background: 'var(--bg-tertiary)', borderRadius: '8px', padding: '6px' }}
+                            >
+                                <Plus size={18} />
+                            </button>
+                        </div>
+
+                        {/* Watchlist Switcher */}
+                        <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '1rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)' }}>
+                            {watchlists.map(list => (
+                                <button
+                                    key={list.id}
+                                    onClick={() => setActiveWatchlistId(list.id)}
+                                    style={{
+                                        padding: '6px 14px',
+                                        borderRadius: '100px',
+                                        background: activeWatchlistId === list.id ? 'var(--accent-primary)' : 'var(--bg-tertiary)',
+                                        color: activeWatchlistId === list.id ? '#000' : 'var(--text-secondary)',
+                                        border: 'none',
+                                        fontSize: '0.75rem',
+                                        fontWeight: 800,
+                                        whiteSpace: 'nowrap',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s ease'
+                                    }}
+                                >
+                                    {list.name.toUpperCase()}
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Watchlist Items */}
+                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                            {activeWatchlist.coins.length === 0 ? (
+                                <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--text-muted)' }}>
+                                    <Star size={32} style={{ marginBottom: '1rem', opacity: 0.3 }} />
+                                    <p style={{ fontSize: '0.85rem', fontWeight: 600, lineHeight: 1.5 }}>
+                                        No coins in this watchlist. Click the star icon on any coin to add it.
+                                    </p>
+                                </div>
+                            ) : (
+                                activeWatchlist.coins.map(coinId => {
+                                    const coin = coins.find(c => c.id === coinId);
+                                    if (!coin) return null;
+                                    return (
+                                        <Link
+                                            key={coinId}
+                                            to={`/crypto/${coinId}`}
+                                            style={{
+                                                display: 'flex',
+                                                justifyContent: 'space-between',
+                                                alignItems: 'center',
+                                                padding: '12px',
+                                                background: 'var(--bg-tertiary)',
+                                                borderRadius: '12px',
+                                                textDecoration: 'none',
+                                                color: 'inherit',
+                                                border: '1px solid transparent',
+                                                transition: 'all 0.2s ease'
+                                            }}
+                                            className="watchlist-sidebar-item"
+                                        >
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                <img src={coin.image} alt={coin.name} style={{ width: '24px', height: '24px' }} />
                                                 <div>
-                                                    <Skeleton width="80px" />
-                                                    <Skeleton width="40px" height="12px" />
+                                                    <div style={{ fontWeight: 800, fontSize: '0.8rem' }}>{coin.symbol.toUpperCase()}</div>
+                                                    <div style={{
+                                                        fontSize: '0.7rem',
+                                                        fontWeight: 700,
+                                                        color: coin.price_change_percentage_24h >= 0 ? 'var(--success-color)' : 'var(--danger-color)'
+                                                    }}>
+                                                        {coin.price_change_percentage_24h >= 0 ? '+' : ''}{coin.price_change_percentage_24h?.toFixed(2)}%
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </td>
-                                        <td><Skeleton width="60px" className="numeric-cell" /></td>
-                                        <td className="mobile-hide"><Skeleton width="50px" style={{ margin: '0 auto' }} /></td>
-                                        <td className="mobile-hide"><Skeleton width="100px" className="numeric-cell" /></td>
-                                        <td className="mobile-hide"><Skeleton width="100px" className="numeric-cell" /></td>
-                                        <td style={{ textAlign: 'right' }}><Skeleton width="60px" height="30px" borderRadius="8px" /></td>
-                                    </tr>
-                                ))
-                            ) : (
-                                (filteredCoins || []).map((coin, index) => (
-                                    <motion.tr
-                                        key={coin.id}
-                                        layout
-                                        initial={{ opacity: 0, x: -10 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        exit={{ opacity: 0, scale: 0.95 }}
-                                        transition={{ duration: 0.2 }}
-                                    >
-                                        <td className="mobile-hide">{index + 1}</td>
-                                        <td>
-                                            <motion.button
-                                                whileHover={{ scale: 1.2 }}
-                                                whileTap={{ scale: 0.8 }}
-                                                onClick={(e) => toggleWatchlist(e, coin.id)}
-                                                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: activeWatchlist.coins.includes(coin.id) ? '#f3ba2f' : 'var(--text-muted)' }}
-                                            >
-                                                <Star size={18} fill={activeWatchlist.coins.includes(coin.id) ? '#f3ba2f' : 'none'} />
-                                            </motion.button>
-                                        </td>
-                                        <td style={{ padding: '1rem 0.5rem' }}>
-                                            <Link to={`/crypto/${coin.id}`} className="crypto-name" style={{ textDecoration: 'none', color: 'inherit' }}>
-                                                <img src={coin.image} alt={coin.name} className="crypto-icon" style={{ width: '32px', height: '32px' }} />
-                                                <div style={{ minWidth: 0, flex: 1 }}>
-                                                    <div style={{ fontWeight: 700, fontSize: '0.9rem', lineHeight: 1.2, wordBreak: 'break-word', whiteSpace: 'normal' }}>{coin.name}</div>
-                                                    <div className="crypto-symbol" style={{ fontWeight: 500, opacity: 0.8, fontSize: '0.75rem' }}>{coin.symbol?.toUpperCase()}</div>
-                                                </div>
-                                            </Link>
-                                        </td>
-                                        <td className="price-cell" style={{ fontWeight: 700, fontSize: '0.9rem' }}>${formatPrice(coin.current_price)}</td>
-                                        <td className={`mobile-hide change-cell ${coin.price_change_percentage_24h >= 0 ? 'change-positive' : 'change-negative'}`} style={{ fontWeight: 700 }}>
-                                            {coin.price_change_percentage_24h >= 0 ? '+' : ''}{coin.price_change_percentage_24h?.toFixed(2)}%
-                                        </td>
-                                        <td className="mobile-hide numeric-cell" style={{ fontWeight: 500 }}>${formatNumber(coin.market_cap)}</td>
-                                        <td className="mobile-hide numeric-cell" style={{ fontWeight: 500 }}>${formatNumber(coin.total_volume)}</td>
-                                        <td style={{ textAlign: 'right' }}>
-                                            <Link to={`/crypto/${coin.id}`} className="btn btn-primary btn-sm" style={{ borderRadius: '10px', padding: '0.5rem 0.75rem', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                                                Trade <ChevronRight size={14} />
-                                            </Link>
-                                        </td>
-                                    </motion.tr>
-                                ))
+                                            <div style={{ textAlign: 'right' }}>
+                                                <div style={{ fontWeight: 800, fontSize: '0.85rem' }}>${formatPrice(coin.current_price)}</div>
+                                            </div>
+                                        </Link>
+                                    );
+                                })
                             )}
-                        </AnimatePresence>
-                    </tbody>
-                </table>
-                {!isLoading && filteredCoins.length === 0 && coins.length > 0 && (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
-                        <Search size={48} style={{ marginBottom: '1rem', opacity: 0.5 }} />
-                        <p>No coins found matching "{searchTerm}"</p>
-                    </motion.div>
-                )}
-            </motion.div>
+                        </div>
+
+                        {/* Watchlist Quick Actions */}
+                        <div style={{ marginTop: '2rem', display: 'flex', gap: '10px' }}>
+                            <button
+                                onClick={() => { setModalType('rename'); setWatchlistActionId(activeWatchlistId); setTempName(activeWatchlist.name); }}
+                                className="btn btn-secondary"
+                                style={{ flex: 1, borderRadius: '10px', fontSize: '0.75rem', fontWeight: 800 }}
+                            >
+                                RENAME
+                            </button>
+                            <button
+                                onClick={() => { setModalType('delete'); setWatchlistActionId(activeWatchlistId); }}
+                                className="btn btn-danger-outline"
+                                style={{
+                                    flex: 1,
+                                    borderRadius: '10px',
+                                    fontSize: '0.75rem',
+                                    fontWeight: 800,
+                                    border: '1px solid rgba(246, 70, 93, 0.2)',
+                                    color: 'var(--danger-color)',
+                                    background: 'transparent'
+                                }}
+                            >
+                                DELETE
+                            </button>
+                        </div>
+                    </div>
+                </motion.div>
+            </div>
             {/* Custom Action Modals */}
             <AnimatePresence>
                 {modalType && (

@@ -11,8 +11,10 @@ import Profile from './pages/Profile';
 import CryptoDetail from './pages/CryptoDetail';
 import WalletPage from './pages/WalletPage';
 import TransactionHistory from './pages/TransactionHistory';
+import Leaderboard from './pages/Leaderboard';
 import About from './pages/About';
 import { Toaster } from 'react-hot-toast';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -47,6 +49,7 @@ const PageTitleUpdater = () => {
     else if (path === '/profile') title = 'Profile';
     else if (path === '/wallet') title = 'Wallet';
     else if (path === '/history') title = 'Trade History';
+    else if (path === '/leaderboard') title = 'Leaderboard';
     // else if (path === '/about') title = 'About ChainXchange';
     else if (path.startsWith('/crypto/')) {
       title = 'Crypto Detail';
@@ -56,6 +59,54 @@ const PageTitleUpdater = () => {
   }, [location]);
 
   return null;
+};
+
+const AnimatedRoutes = () => {
+  const location = useLocation();
+
+  return (
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
+        <Route path="/" element={<Markets />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+        <Route path="/crypto/:coinId" element={<CryptoDetail />} />
+        <Route
+          path="/portfolio"
+          element={
+            <ProtectedRoute>
+              <Portfolio />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/wallet"
+          element={
+            <ProtectedRoute>
+              <WalletPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/history"
+          element={
+            <ProtectedRoute>
+              <TransactionHistory />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/leaderboard" element={<Leaderboard />} />
+      </Routes>
+    </AnimatePresence>
+  );
 };
 
 const AppContent = () => {
@@ -68,45 +119,7 @@ const AppContent = () => {
       <PageTitleUpdater />
       <Navbar />
       <main className="container">
-        <Routes>
-          <Route path="/" element={<Markets />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
-          {/* <Route path="/about" element={<About />} /> */}
-          <Route path="/crypto/:coinId" element={<CryptoDetail />} />
-          <Route
-            path="/portfolio"
-            element={
-              <ProtectedRoute>
-                <Portfolio />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/profile"
-            element={
-              <ProtectedRoute>
-                <Profile />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/wallet"
-            element={
-              <ProtectedRoute>
-                <WalletPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/history"
-            element={
-              <ProtectedRoute>
-                <TransactionHistory />
-              </ProtectedRoute>
-            }
-          />
-        </Routes>
+        <AnimatedRoutes />
       </main>
       <footer className="footer" style={{ textAlign: 'center', padding: '2rem', borderTop: '1px solid var(--border-color)', marginTop: '4rem' }}>
         <p>&copy; {new Date().getFullYear()} ChainXchange - Professional Crypto Trading Platform</p>
